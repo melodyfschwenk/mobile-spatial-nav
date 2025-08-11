@@ -1,736 +1,644 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Spatial Navigation Experiment</title>
-    
-<!-- Load stimulus mappings FIRST -->
-<script src="stimulus_mappings.js"></script>
-<!-- Load experiment logic SECOND -->
-<script src="experiment.js"></script>
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-        }
-
-        #experiment-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        /* Progress Bar */
-        .progress-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 50px;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 15px;
-            z-index: 100;
-        }
-
-        .progress-text {
-            font-size: 14px;
-            color: #333;
-            font-weight: 600;
-        }
-
-        .progress-fill {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.3s ease;
-        }
-
-        /* Response Timer Bar */
-        .response-timer {
-            position: absolute;
-            top: 47px;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: #e0e0e0;
-            z-index: 99;
-            display: none;
-        }
-
-        .response-timer.active {
-            display: block;
-        }
-
-        .response-timer-fill {
-            height: 100%;
-            background: #ff6b6b;
-            width: 100%;
-            transform-origin: left;
-            animation: countdown 3s linear forwards;
-        }
-
-        @keyframes countdown {
-            from { transform: scaleX(1); }
-            to { transform: scaleX(0); }
-        }
-
-        /* Screens */
-        .screen {
-            display: none;
-            width: 100%;
-            height: 100%;
-            padding-top: 50px;
-            flex-direction: column;
-        }
-
-        .screen.active {
-            display: flex;
-        }
-
-        /* Data Entry Screen */
-        #data-entry-screen {
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .form-container {
-            background: white;
-            border-radius: 15px;
-            padding: 30px 20px;
-            max-width: 500px;
-            width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .form-container h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 25px;
-            font-size: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .form-group select,
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            background: white;
-            transition: border-color 0.3s;
-        }
-
-        .form-group select:focus,
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .hint {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
-            font-style: italic;
-        }
-
-        /* Button Training Screen */
-        #button-training-screen {
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-        }
-
-        .training-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .training-instruction {
-            font-size: 18px;
-            color: #333;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .training-targets {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .training-target {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #ddd;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-
-        .training-target.completed {
-            background: #4CAF50;
-            color: white;
-            border-color: #4CAF50;
-        }
-
-        /* Instruction Screen */
-        #instruction-screen {
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .instruction-container {
-            background: white;
-            border-radius: 15px;
-            padding: 30px 20px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .nav-type-header {
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            margin-bottom: 20px;
-            font-size: 18px;
-        }
-
-        .egocentric-header { background: #4CAF50; }
-        .allocentric-header { background: #9C27B0; }
-        .control-header { background: #FF9800; }
-
-        .instruction-text {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #333;
-            margin-bottom: 25px;
-        }
-
-        /* Stimulus Screen */
-        #stimulus-screen {
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-        }
-
-        .stimulus-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            position: relative;
-        }
-
-        .stimulus-stage {
-            width: min(400px, 80vw);
-            height: min(400px, 80vw);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-        }
-
-        #stimulus-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: none;
-        }
-
-        .fixation {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            display: none;
-        }
-
-        .fixation::before,
-        .fixation::after {
-            content: "";
-            position: absolute;
-            background: #333;
-        }
-
-        .fixation::before {
-            left: 50%;
-            transform: translateX(-50%);
-            width: 3px;
-            height: 100%;
-        }
-
-        .fixation::after {
-            top: 50%;
-            transform: translateY(-50%);
-            width: 100%;
-            height: 3px;
-        }
-
-        /* D-Pad Control System */
-        .controls-container {
-            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-top: 2px solid #dee2e6;
-        }
-
-        .dpad-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            margin: 0 auto;
-        }
-
-        .dpad-btn {
-            position: absolute;
-            background: white;
-            border: 3px solid #cbd5e0;
-            border-radius: 12px;
-            font-size: 32px;
-            font-weight: bold;
-            color: #2d3748;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .dpad-btn:active:not(:disabled) {
-            transform: scale(0.92);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            background: #e2e8f0;
-        }
-
-        .dpad-btn.pressed {
-            background: #667eea !important;
-            color: white !important;
-            border-color: #667eea !important;
-        }
-
-        .dpad-btn.up {
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 65px;
-            height: 65px;
-        }
-
-        .dpad-btn.down {
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 65px;
-            height: 65px;
-        }
-
-        .dpad-btn.left {
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 65px;
-            height: 65px;
-        }
-
-        .dpad-btn.right {
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 65px;
-            height: 65px;
-        }
-
-        .dpad-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 50px;
-            height: 50px;
-            background: #cbd5e0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: #718096;
-            font-weight: bold;
-            pointer-events: none;
-        }
-
-        .dpad-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        /* Response Feedback Overlay */
-        .response-feedback {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 100px;
-            font-weight: bold;
-            color: #667eea;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-            z-index: 50;
-        }
-
-        .response-feedback.show {
-            opacity: 0.8;
-            transform: translate(-50%, -50%) scale(1.2);
-        }
-
-        /* Feedback Screen */
-        #feedback-screen {
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .feedback-container {
-            background: white;
-            border-radius: 15px;
-            padding: 40px 20px;
-            max-width: 500px;
-            width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .feedback-text {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        /* Buttons */
-        .button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 15px 40px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-block;
-            text-decoration: none;
-        }
-
-        .button:active {
-            transform: scale(0.98);
-        }
-
-        .button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        /* Desktop Controls Info */
-        .desktop-controls {
-            display: none;
-            text-align: center;
-            padding: 10px;
-            background: #f0f4ff;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        @media (min-width: 768px) {
-            .desktop-controls {
-                display: block;
-            }
-        }
-
-        /* Practice Mode Indicator */
-        .practice-indicator {
-            position: absolute;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #4CAF50;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            display: none;
-            z-index: 50;
-        }
-
-        .practice-indicator.active {
-            display: block;
-        }
-
-        /* Catch Trial Indicator */
-        .catch-indicator {
-            position: absolute;
-            top: 60px;
-            right: 15px;
-            background: #FF9800;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: bold;
-            display: none;
-            z-index: 50;
-        }
-
-        .catch-indicator.active {
-            display: block;
-        }
-
-        /* Haptic Feedback Indicator */
-        .haptic-indicator {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-
-        .haptic-indicator.show {
-            opacity: 1;
-        }
-
-        /* Touch indicator for visual feedback */
-        .touch-ripple {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(102, 126, 234, 0.3);
-            transform: translate(-50%, -50%) scale(0);
-            animation: ripple 0.6s ease-out;
-            pointer-events: none;
-        }
-
-        @keyframes ripple {
-            to {
-                transform: translate(-50%, -50%) scale(3);
-                opacity: 0;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Spatial Navigation Experiment</title>
+
+  <!-- Load stimulus mappings FIRST -->
+  <script src="stimulus_mappings.js" defer></script>
+  <!-- Load experiment logic SECOND -->
+  <script src="experiment.js" defer></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f5f5;
+      overflow: hidden;
+      position: fixed;
+      inset: 0;
+    }
+
+    #experiment-container {
+      width: 100vw; height: 100vh;
+      display: flex; flex-direction: column; position: relative;
+    }
+
+    /* Top bar */
+    .topbar {
+      position: absolute; top: 0; left: 0; right: 0; height: 56px; background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 12px; z-index: 100;
+    }
+    .topbar .progress { position: relative; flex: 1; margin: 0 12px; height: 6px; background: #edf2f7; border-radius: 999px; }
+    .topbar .progress > span { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 999px; transition: width 300ms ease; }
+    .topbar .label { font-size: 14px; font-weight: 600; color: #2d3748; min-width: 140px; }
+    .topbar .timer { font-variant-numeric: tabular-nums; font-size: 14px; color: #4a5568; min-width: 72px; text-align: right; }
+
+    /* Global buttons */
+    .button { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: 0; border-radius: 22px; padding: 12px 20px; font-weight: 700; cursor: pointer; transition: transform 120ms ease, opacity 120ms ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .button:active { transform: scale(0.98); }
+    .button[disabled] { opacity: 0.5; cursor: not-allowed; }
+    .button.secondary { background: #e2e8f0; color: #1a202c; }
+    .linkish { background: transparent; border: 0; color: #4a5568; text-decoration: underline; cursor: pointer; font: inherit; }
+
+    /* Screens */
+    .screen { display: none; width: 100%; height: 100%; padding-top: 56px; }
+    .screen.active { display: flex; }
+
+    /* Data entry */
+    #data-entry-screen { justify-content: center; align-items: center; padding: 16px; }
+    .card { width: 100%; max-width: 520px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 24px; }
+    .card h2 { text-align: center; color: #1a202c; margin-bottom: 12px; }
+    .card p.muted { text-align: center; color: #718096; font-size: 14px; margin-bottom: 20px; }
+    .row { margin-bottom: 14px; }
+    label { display: block; font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+    select, input[type="number"], input[type="text"] { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #e2e8f0; border-radius: 10px; background: #fff; }
+    select:focus, input:focus { outline: none; border-color: #667eea; }
+    .hint { font-size: 12px; color: #718096; margin-top: 6px; font-style: italic; }
+
+    /* Button training */
+    #button-training-screen { flex-direction: column; }
+    .train-wrap { flex: 1; display: grid; place-items: center; padding: 16px; }
+    .train { width: min(720px, 92vw); background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 20px; text-align: center; }
+    .train h3 { color: #1a202c; margin-bottom: 8px; }
+    .targets { display: flex; gap: 12px; justify-content: center; margin: 14px 0; }
+    .tgt { width: 56px; height: 56px; border: 3px solid #e2e8f0; border-radius: 12px; display: grid; place-items: center; font-size: 28px; font-weight: 800; transition: all 150ms ease; }
+    .tgt.done { background: #48bb78; color: #fff; border-color: #48bb78; }
+    .prompt { font-size: 18px; color: #2d3748; margin: 10px 0 16px; }
+
+    .controls { background: linear-gradient(#f8fafc, #edf2f7); border-top: 2px solid #e2e8f0; padding: 16px; }
+    .dpad { position: relative; width: 220px; height: 220px; margin: 0 auto; }
+    .d { position: absolute; width: 70px; height: 70px; background: #fff; border: 3px solid #cbd5e0; border-radius: 14px; display: grid; place-items: center; font-size: 32px; font-weight: 800; color: #2d3748; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+    .d:active { transform: scale(0.94); background: #e6ecf5; }
+    .d.pressed { background: #667eea; color: #fff; border-color: #667eea; }
+    .d.up { top: 0; left: 50%; transform: translateX(-50%); }
+    .d.down { bottom: 0; left: 50%; transform: translateX(-50%); }
+    .d.left { left: 0; top: 50%; transform: translateY(-50%); }
+    .d.right { right: 0; top: 50%; transform: translateY(-50%); }
+    .center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 56px; height: 56px; border-radius: 999px; background: #cbd5e0; display: grid; place-items: center; font-size: 12px; color: #4a5568; font-weight: 700; pointer-events: none; }
+
+    .bar-timer { position: absolute; top: 56px; left: 0; right: 0; height: 3px; background: #e2e8f0; display: none; }
+    .bar-timer.active { display: block; }
+    .bar-timer > span { display: block; height: 100%; width: 100%; background: #fb7185; transform-origin: left; animation: tickdown 3s linear forwards; }
+    @keyframes tickdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+    /* Instruction */
+    #instruction-screen { justify-content: center; align-items: center; padding: 16px; }
+    .instruction { width: 100%; max-width: 640px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 24px; text-align: center; }
+    .badge { display: inline-block; padding: 8px 14px; border-radius: 999px; color: #fff; font-weight: 800; margin-bottom: 12px; }
+    .badge.egocentric { background: #48bb78; }
+    .badge.allocentric { background: #9f7aea; }
+    .badge.control { background: #f6ad55; }
+    .instruction p { color: #2d3748; line-height: 1.6; margin: 12px 0; }
+
+    /* Stimulus */
+    #stimulus-screen { flex-direction: column; }
+    .stage-wrap { flex: 1; display: grid; place-items: center; padding: 16px; position: relative; }
+    .stage { width: min(420px, 82vw); height: min(420px, 82vw); background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; display: grid; place-items: center; position: relative; }
+    #stimulus-image { max-width: 100%; max-height: 100%; display: none; }
+    .fix { position: absolute; width: 60px; height: 60px; display: none; }
+    .fix::before, .fix::after { content: ""; position: absolute; background: #2d3748; }
+    .fix::before { left: 50%; transform: translateX(-50%); width: 3px; height: 100%; }
+    .fix::after { top: 50%; transform: translateY(-50%); width: 100%; height: 3px; }
+    .overlay { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 88px; font-weight: 900; color: #667eea; opacity: 0; transition: all 200ms ease; pointer-events: none; }
+    .overlay.show { opacity: 0.85; transform: translate(-50%, -50%) scale(1.1); }
+
+    /* Feedback */
+    #feedback-screen { justify-content: center; align-items: center; padding: 16px; }
+    .feedback { width: 100%; max-width: 560px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 24px; text-align: center; }
+    .feedback h3 { font-size: 24px; margin-bottom: 10px; }
+    .details { color: #4a5568; margin-bottom: 16px; }
+
+    /* Skip and helper badges */
+    .skipper { position: absolute; top: 64px; right: 12px; z-index: 60; }
+    .helper { position: absolute; top: 64px; left: 12px; z-index: 60; background: #edf2f7; color: #1a202c; padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+
+    /* Orientation warning */
+    .orient { position: fixed; inset: 0; background: rgba(0,0,0,0.65); color: #fff; display: none; align-items: center; justify-content: center; text-align: center; padding: 24px; z-index: 200; }
+    .orient.show { display: flex; }
+    .orient .box { max-width: 520px; }
+
+    /* Touch ripple */
+    .ripple { position: absolute; width: 40px; height: 40px; border-radius: 999px; background: rgba(102,126,234,0.28); transform: translate(-50%, -50%) scale(0); pointer-events: none; animation: rip 600ms ease-out forwards; }
+    @keyframes rip { to { transform: translate(-50%, -50%) scale(3); opacity: 0; } }
+
+    /* Desktop hint */
+    .kbd { display: none; text-align: center; padding: 8px; color: #4a5568; font-size: 14px; }
+    @media (min-width: 768px) { .kbd { display: block; } }
+  </style>
 </head>
 <body>
-    <div id="experiment-container">
-        <!-- Progress Bar -->
-        <div class="progress-bar">
-            <span class="progress-text" id="progress-text">Welcome</span>
-            <span class="progress-text" id="timer"></span>
-            <div class="progress-fill" id="progress-fill"></div>
-        </div>
-
-        <!-- Response Timer -->
-        <div class="response-timer" id="response-timer">
-            <div class="response-timer-fill"></div>
-        </div>
-
-        <!-- Practice Mode Indicator -->
-        <div class="practice-indicator" id="practice-indicator">PRACTICE MODE</div>
-        
-        <!-- Catch Trial Indicator -->
-        <div class="catch-indicator" id="catch-indicator">ATTENTION CHECK</div>
-
-        <!-- Data Entry Screen -->
-        <div id="data-entry-screen" class="screen active">
-            <div class="form-container">
-                <h2>Participant Information</h2>
-                
-                <div class="form-group">
-                    <label for="participant-group">Participant Group:</label>
-                    <select id="participant-group" onchange="onGroupChange()">
-                        <option value="">Select your group...</option>
-                        <option value="DF">Deaf Fluent Signer</option>
-                        <option value="HF">Hearing Fluent Signer</option>
-                        <option value="DNF">Deaf Non-Fluent Signer</option>
-                        <option value="HNF">Hearing Non-Fluent Signer</option>
-                        <option value="HNS">Hearing Non-Signer</option>
-                    </select>
-                    <div id="group-desc" class="hint"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="age">Age:</label>
-                    <input type="number" id="age" min="18" max="100" placeholder="Enter your age" oninput="checkFormReady()">
-                </div>
-
-                <div class="form-group">
-                    <label for="gender">Gender:</label>
-                    <select id="gender" onchange="checkFormReady()">
-                        <option value="">Select...</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="non-binary">Non-binary</option>
-                        <option value="prefer-not">Prefer not to say</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="handedness">Handedness:</label>
-                    <select id="handedness" onchange="checkFormReady()">
-                        <option value="">Select...</option>
-                        <option value="right">Right</option>
-                        <option value="left">Left</option>
-                        <option value="ambidextrous">Ambidextrous</option>
-                    </select>
-                </div>
-
-                <button class="button" id="start-button" onclick="startExperiment()" disabled>
-                    Fill in all fields to continue
-                </button>
-            </div>
-        </div>
-
-        <!-- Button Training Screen -->
-        <div id="button-training-screen" class="screen">
-            <div class="training-container">
-                <h3 style="color: #333; margin-bottom: 20px;">Button Training</h3>
-                <p class="training-instruction" id="training-instruction">
-                    Let's practice using the controls.<br>
-                    Tap each arrow button below when its symbol appears above.
-                </p>
-                
-                <div class="training-targets">
-                    <div class="training-target" id="target-up">↑</div>
-                    <div class="training-target" id="target-down">↓</div>
-                    <div class="training-target" id="target-left">←</div>
-                    <div class="training-target" id="target-right">→</div>
-                </div>
-                
-                <div style="font-size: 24px; font-weight: bold; color: #667eea; margin: 20px 0;" id="training-prompt">
-                    Press: <span id="current-target" style="font-size: 36px;">↑</span>
-                </div>
-            </div>
-            
-            <div class="controls-container">
-                <div class="dpad-container">
-                    <button class="dpad-btn up" data-direction="up" onclick="handleTrainingPress('up')">↑</button>
-                    <button class="dpad-btn down" data-direction="down" onclick="handleTrainingPress('down')">↓</button>
-                    <button class="dpad-btn left" data-direction="left" onclick="handleTrainingPress('left')">←</button>
-                    <button class="dpad-btn right" data-direction="right" onclick="handleTrainingPress('right')">→</button>
-                    <div class="dpad-center">TAP</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Instruction Screen -->
-        <div id="instruction-screen" class="screen">
-            <div class="instruction-container">
-                <div id="nav-type-indicator"></div>
-                <div id="instruction-text" class="instruction-text"></div>
-                <button class="button" id="instruction-continue">Continue</button>
-            </div>
-        </div>
-
-        <!-- Stimulus Screen -->
-        <div id="stimulus-screen" class="screen">
-            <div class="stimulus-container">
-                <div class="stimulus-stage">
-                    <img id="stimulus-image" src="" alt="Stimulus">
-                    <div class="fixation" id="fixation"></div>
-                </div>
-                <div class="response-feedback" id="response-feedback"></div>
-                <div class="desktop-controls">
-                    Desktop users: Use arrow keys to respond
-                </div>
-            </div>
-            
-            <div class="controls-container">
-                <div class="dpad-container">
-                    <button class="dpad-btn up" data-direction="up" onclick="handleButtonPress('up')">↑</button>
-                    <button class="dpad-btn down" data-direction="down" onclick="handleButtonPress('down')">↓</button>
-                    <button class="dpad-btn left" data-direction="left" onclick="handleButtonPress('left')">←</button>
-                    <button class="dpad-btn right" data-direction="right" onclick="handleButtonPress('right')">→</button>
-                    <div class="dpad-center">TAP</div>
-                </div>
-                <div class="haptic-indicator" id="haptic-indicator">✓</div>
-            </div>
-        </div>
-
-        <!-- Feedback Screen -->
-        <div id="feedback-screen" class="screen">
-            <div class="feedback-container">
-                <div class="feedback-text" id="feedback-text"></div>
-                <div id="feedback-details"></div>
-                <button class="button" id="download-button" onclick="downloadData()" style="display:none;">
-                    Download Data
-                </button>
-            </div>
-        </div>
+  <div id="experiment-container" aria-live="polite">
+    <div class="topbar" role="region" aria-label="Top bar">
+      <div class="label" id="top-label">Welcome</div>
+      <div class="progress" aria-hidden="true"><span id="progress-fill"></span></div>
+      <div class="timer" id="timer"></div>
     </div>
 
-    <script src="experiment.js"></script>
+    <div class="bar-timer" id="response-bar"><span></span></div>
+
+    <!-- Data entry screen -->
+    <section id="data-entry-screen" class="screen active" aria-label="Participant info">
+      <div class="card" role="form">
+        <h2>Participant information</h2>
+        <p class="muted">Best on a computer with keyboard. Phone and tablet are fine if you have a keyboard or use the on-screen arrows.</p>
+
+        <div class="row">
+          <label for="participant-group">Participant group</label>
+          <select id="participant-group" autocomplete="off">
+            <option value="">Select your group</option>
+            <option value="DF">Deaf fluent signer</option>
+            <option value="HF">Hearing fluent signer</option>
+            <option value="DNF">Deaf non-fluent signer</option>
+            <option value="HNF">Hearing non-fluent signer</option>
+            <option value="HNS">Hearing non-signer</option>
+          </select>
+          <div id="group-desc" class="hint"></div>
+        </div>
+
+        <div class="row">
+          <label for="age">Age</label>
+          <input id="age" type="number" min="18" max="100" placeholder="Enter your age" />
+        </div>
+
+        <div class="row">
+          <label for="gender">Gender</label>
+          <select id="gender">
+            <option value="">Select</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="non-binary">Non-binary</option>
+            <option value="prefer-not">Prefer not to say</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="handedness">Handedness</label>
+          <select id="handedness">
+            <option value="">Select</option>
+            <option value="right">Right</option>
+            <option value="left">Left</option>
+            <option value="ambidextrous">Ambidextrous</option>
+          </select>
+        </div>
+
+        <div class="row" style="display:flex; gap:8px; flex-wrap: wrap; justify-content: center; margin-top: 6px;">
+          <button class="button" id="start-btn" disabled>Continue</button>
+          <button class="button secondary" id="skip-all-btn">Skip all tasks</button>
+        </div>
+        <p class="hint" style="text-align:center; margin-top:10px;">All tasks are voluntary. You may skip at any time.</p>
+      </div>
+    </section>
+
+    <!-- Button training screen -->
+    <section id="button-training-screen" class="screen" aria-label="Practice controls">
+      <div class="helper">Practice mode</div>
+      <div class="skipper"><button class="linkish" id="skip-practice">Skip practice</button></div>
+
+      <div class="train-wrap">
+        <div class="train">
+          <h3>Button training</h3>
+          <p class="prompt">Press the highlighted arrow.</p>
+          <div class="targets" aria-hidden="true">
+            <div class="tgt" id="t-up">↑</div>
+            <div class="tgt" id="t-down">↓</div>
+            <div class="tgt" id="t-left">←</div>
+            <div class="tgt" id="t-right">→</div>
+          </div>
+          <div class="prompt" id="train-prompt">Press: <span id="need">↑</span></div>
+          <div class="kbd">Desktop tip, use the keyboard arrows.</div>
+          <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button class="button" id="practice-continue" disabled>Continue</button>
+            <button class="button secondary" id="practice-restart">Restart practice</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="dpad" id="dpad">
+          <button class="d up dpad-btn" data-dir="up">↑</button>
+          <button class="d down dpad-btn" data-dir="down">↓</button>
+          <button class="d left dpad-btn" data-dir="left">←</button>
+          <button class="d right dpad-btn" data-dir="right">→</button>
+          <div class="center">TAP</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Instruction screen -->
+    <section id="instruction-screen" class="screen" aria-label="Instructions">
+      <div class="skipper"><button class="linkish" id="skip-task">Skip this task</button></div>
+      <div class="instruction">
+        <div id="nav-badge" class="badge control">Navigation task</div>
+        <p id="instruction-text">You will briefly see a fixation cross, then a grid. Choose the matching direction using the arrows or keyboard. Try to respond quickly and accurately. This block will take a few minutes.</p>
+        <p class="hint">On mobile, we will ask to enter full screen on the next step for a smoother experience.</p>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top: 8px;">
+          <button class="button" id="enter-fullscreen">Continue</button>
+          <button class="button secondary" id="no-fullscreen">Continue without full screen</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stimulus screen -->
+    <section id="stimulus-screen" class="screen" aria-label="Task">
+      <div class="skipper"><button class="linkish" id="skip-midtask">Stop and skip</button></div>
+      <div class="stage-wrap">
+        <div class="stage">
+          <img id="stimulus-image" alt="Stimulus" />
+          <div class="fix" id="fix"></div>
+        </div>
+        <div class="overlay" id="feedback-overlay">✓</div>
+        <div class="kbd">Desktop tip, use the keyboard arrows.</div>
+      </div>
+      <div class="controls">
+        <div class="dpad" id="dpad-live">
+          <button class="d up live-btn" data-dir="up">↑</button>
+          <button class="d down live-btn" data-dir="down">↓</button>
+          <button class="d left live-btn" data-dir="left">←</button>
+          <button class="d right live-btn" data-dir="right">→</button>
+          <div class="center">TAP</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feedback / end screen -->
+    <section id="feedback-screen" class="screen" aria-label="End">
+      <div class="feedback">
+        <h3 id="fb-title">All done</h3>
+        <div class="details" id="fb-details"></div>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+          <button class="button" id="download-btn" style="display:none;">Download data</button>
+          <a class="button secondary" id="exit-link" href="#">Exit</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Orientation overlay -->
+    <div id="orient" class="orient">
+      <div class="box">
+        <h3 style="margin-bottom:8px;">Rotate your device</h3>
+        <p>Landscape works better for this task. You can continue in portrait, but rotating will improve visibility.</p>
+        <div style="margin-top:14px;"><button class="button secondary" id="orient-dismiss">OK</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    const screens = {
+      data: byId('data-entry-screen'),
+      practice: byId('button-training-screen'),
+      instruction: byId('instruction-screen'),
+      task: byId('stimulus-screen'),
+      end: byId('feedback-screen')
+    };
+
+    const ui = {
+      label: byId('top-label'),
+      fill: byId('progress-fill'),
+      timer: byId('timer'),
+      respBar: byId('response-bar'),
+      fb: byId('feedback-overlay'),
+      orient: byId('orient')
+    };
+
+    const form = {
+      group: byId('participant-group'),
+      age: byId('age'),
+      gender: byId('gender'),
+      hand: byId('handedness'),
+      start: byId('start-btn'),
+      skipAll: byId('skip-all-btn'),
+      groupDesc: byId('group-desc')
+    };
+
+    const training = {
+      need: byId('need'),
+      t: { up: byId('t-up'), down: byId('t-down'), left: byId('t-left'), right: byId('t-right') },
+      continue: byId('practice-continue'),
+      restart: byId('practice-restart'),
+      skip: byId('skip-practice')
+    };
+
+    const instr = {
+      badge: byId('nav-badge'),
+      text: byId('instruction-text'),
+      fs: byId('enter-fullscreen'),
+      nfs: byId('no-fullscreen'),
+      skip: byId('skip-task')
+    };
+
+    const live = {
+      img: byId('stimulus-image'),
+      fix: byId('fix'),
+      dpad: byId('dpad-live'),
+      skip: byId('skip-midtask')
+    };
+
+    const end = {
+      title: byId('fb-title'),
+      details: byId('fb-details'),
+      dl: byId('download-btn'),
+      exit: byId('exit-link')
+    };
+
+    const orientDismiss = byId('orient-dismiss');
+
+    // State
+    const state = {
+      participant: {},
+      progress: 0,
+      trainingOrder: [],
+      trainingIndex: 0,
+      trainingDone: { up:false, down:false, left:false, right:false },
+      fullscreenWanted: false,
+      running: false,
+      startTime: null
+    };
+
+    // Helpers
+    function byId(id){ return document.getElementById(id); }
+    function show(screen){ Object.values(screens).forEach(s => s.classList.remove('active')); screen.classList.add('active'); window.scrollTo(0,0); }
+    function setLabel(txt){ ui.label.textContent = txt; }
+    function setProgress(p){ state.progress = Math.max(0, Math.min(100, p)); ui.fill.style.width = state.progress + '%'; }
+    function vibrate(ms=10){ try { navigator.vibrate && navigator.vibrate(ms); } catch(_){} }
+    function ripple(x,y){ const r = document.createElement('div'); r.className = 'ripple'; r.style.left = x+'px'; r.style.top = y+'px'; document.body.appendChild(r); setTimeout(() => r.remove(), 650); }
+
+    // Orientation hint for narrow portrait
+    function checkOrientation(){
+      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+      const narrow = window.innerWidth < 480;
+      ui.orient.classList.toggle('show', isPortrait && narrow);
+    }
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    orientDismiss.addEventListener('click', () => ui.orient.classList.remove('show'));
+
+    // Data entry enable logic
+    function updateGroupDesc(){
+      const v = form.group.value;
+      const map = {
+        DF:'Deaf, fluent in sign language',
+        HF:'Hearing, fluent in sign language',
+        DNF:'Deaf, not fluent in sign language',
+        HNF:'Hearing, not fluent in sign language',
+        HNS:'Hearing, non-signer'
+      };
+      form.groupDesc.textContent = map[v] || '';
+    }
+
+    function checkReady(){
+      const ok = form.group.value && form.age.value && form.gender.value && form.hand.value;
+      form.start.disabled = !ok;
+      return ok;
+    }
+
+    form.group.addEventListener('change', () => { updateGroupDesc(); checkReady(); });
+    form.age.addEventListener('input', checkReady);
+    form.gender.addEventListener('change', checkReady);
+    form.hand.addEventListener('change', checkReady);
+
+    // Start flow
+    form.start.addEventListener('click', () => {
+      state.participant = {
+        group: form.group.value,
+        age: Number(form.age.value),
+        gender: form.gender.value,
+        handedness: form.hand.value,
+        pid: genPID()
+      };
+      setLabel('Practice');
+      setProgress(10);
+      setupPractice();
+      show(screens.practice);
+      checkOrientation();
+    });
+
+    form.skipAll.addEventListener('click', () => endEarly('You chose to skip all tasks.'));
+
+    // Practice logic
+    function setupPractice(){
+      training.trainingDone = { up:false, down:false, left:false, right:false };
+      training.trainingIndex = 0;
+      training.trainingOrder = shuffle(['up','down','left','right']);
+      training.need.textContent = arrow(training.trainingOrder[0]);
+      Object.values(training.t).forEach(el => el.classList.remove('done'));
+      training.continue.disabled = true;
+    }
+
+    training.restart.addEventListener('click', setupPractice);
+    training.skip.addEventListener('click', () => goToInstructions());
+
+    function onPracticePress(dir){
+      const need = training.trainingOrder[training.trainingIndex];
+      highlightDpad(dir);
+      if(dir === need){
+        training.trainingDone[dir] = true;
+        training.trainingIndex++;
+        training.t[dir].classList.add('done');
+        vibrate(12);
+        if(training.trainingIndex < training.trainingOrder.length){
+          training.need.textContent = arrow(training.trainingOrder[training.trainingIndex]);
+        } else {
+          training.continue.disabled = false;
+        }
+      }
+    }
+
+    training.continue.addEventListener('click', goToInstructions);
+
+    // Instruction screen
+    function goToInstructions(){
+      setLabel('Instructions');
+      setProgress(30);
+      show(screens.instruction);
+    }
+
+    instr.fs.addEventListener('click', async () => {
+      state.fullscreenWanted = true;
+      await requestFullscreen();
+      startTask();
+    });
+    instr.nfs.addEventListener('click', () => { state.fullscreenWanted = false; startTask(); });
+
+    instr.skip.addEventListener('click', () => endEarly('You skipped this task. Thank you for participating.'));
+
+    // Task live controls
+    live.skip.addEventListener('click', () => endEarly('You stopped the task. Your progress was saved.'));
+
+    // Dpad and keyboard handlers (practice and live)
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.dpad-btn, .live-btn');
+      if(!btn) return;
+      const dir = btn.getAttribute('data-dir');
+      ripple(e.clientX, e.clientY);
+      if(screens.practice.classList.contains('active')) onPracticePress(dir);
+      if(screens.task.classList.contains('active')) onResponse(dir);
+    });
+
+    document.addEventListener('keydown', e => {
+      const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+      if(map[e.key]){
+        if(screens.practice.classList.contains('active')) onPracticePress(map[e.key]);
+        if(screens.task.classList.contains('active')) onResponse(map[e.key]);
+      }
+    });
+
+    function highlightDpad(dir){
+      const selector = screens.practice.classList.contains('active') ? '.dpad-btn' : '.live-btn';
+      const btn = document.querySelector(selector + `[data-dir="${dir}"]`);
+      if(btn){ btn.classList.add('pressed'); setTimeout(() => btn.classList.remove('pressed'), 140); }
+    }
+
+    // Minimal task orchestration
+    async function startTask(){
+      setLabel('Task');
+      setProgress(45);
+      show(screens.task);
+      state.running = true;
+      state.startTime = Date.now();
+      // If your experiment.js exposes a start function, call it. Pass simple hooks.
+      if(window.Experiment && typeof window.Experiment.start === 'function'){
+        window.Experiment.start(hooks());
+      } else {
+        // Fallback demo so the shell is testable without experiment.js
+        demoTrials();
+      }
+    }
+
+    function hooks(){
+      return {
+        showFixation: ms => showFix(ms),
+        showImage: src => showStim(src),
+        armTimer: seconds => armResponseTimer(seconds),
+        onEnd: summary => finish(summary)
+      };
+    }
+
+    function showFix(ms=500){
+      live.img.style.display = 'none';
+      live.fix.style.display = 'block';
+      return new Promise(res => setTimeout(() => { live.fix.style.display = 'none'; res(); }, ms));
+    }
+
+    function showStim(src){
+      live.fix.style.display = 'none';
+      live.img.src = src || '';
+      live.img.style.display = 'block';
+    }
+
+    function armResponseTimer(seconds=3){
+      ui.respBar.classList.remove('active');
+      void ui.respBar.offsetWidth; // reset
+      ui.respBar.classList.add('active');
+      const span = ui.respBar.querySelector('span');
+      span.style.animationDuration = seconds + 's';
+    }
+
+    function onResponse(dir){
+      vibrate(8);
+      feedback('✓');
+      if(window.Experiment && typeof window.Experiment.onResponse === 'function'){
+        window.Experiment.onResponse(dir);
+      } else {
+        // Demo mode consumes response directly
+        nextDemo();
+      }
+    }
+
+    function feedback(symbol){ ui.fb.textContent = symbol || '✓'; ui.fb.classList.add('show'); setTimeout(() => ui.fb.classList.remove('show'), 260); }
+
+    function finish(summary){
+      state.running = false;
+      exitFullscreen();
+      setProgress(100);
+      setLabel('Finished');
+      end.title.textContent = 'Thank you';
+      end.details.textContent = summary || 'You have completed the task.';
+      end.dl.style.display = 'none';
+      show(screens.end);
+    }
+
+    function endEarly(reason){
+      exitFullscreen();
+      setProgress(100);
+      setLabel('Finished');
+      end.title.textContent = 'Session ended';
+      end.details.textContent = reason || 'Session ended.';
+      end.dl.style.display = 'none';
+      show(screens.end);
+    }
+
+    // Fullscreen helpers
+    async function requestFullscreen(){
+      const el = document.documentElement;
+      try {
+        if(el.requestFullscreen) await el.requestFullscreen();
+        else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      } catch(_) {}
+    }
+    function exitFullscreen(){
+      try {
+        if(document.fullscreenElement) document.exitFullscreen();
+        else if(document.webkitFullscreenElement) document.webkitExitFullscreen();
+      } catch(_) {}
+    }
+
+    // PID
+    function genPID(){ return 'P' + Math.random().toString(36).slice(2, 8).toUpperCase(); }
+    function arrow(dir){ return ({up:'↑',down:'↓',left:'←',right:'→'})[dir] || '?'; }
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+    // Simple demo when experiment.js is not present
+    let demoIdx = 0, demoList = [
+      {src:'', fix:500}, {src:'', fix:500}, {src:'', fix:500}
+    ];
+    async function demoTrials(){
+      setProgress(60);
+      for(demoIdx=0; demoIdx<demoList.length; demoIdx++){
+        await showFix(400);
+        showStim('');
+        armResponseTimer(3);
+        await wait(700);
+      }
+      finish('Demo complete. Connect your experiment.js to run the real task.');
+    }
+    function nextDemo(){ /* consume response in demo */ }
+    function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+    // Wire live dpad pressed visual state
+    function addPressVisuals(containerSel){
+      const container = document.querySelector(containerSel);
+      container.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if(b) b.classList.add('pressed'); });
+      container.addEventListener('pointerup', e => { const b = e.target.closest('button'); if(b) b.classList.remove('pressed'); });
+      container.addEventListener('pointerleave', e => { const b = e.target.closest('button'); if(b) b.classList.remove('pressed'); });
+    }
+    addPressVisuals('#dpad');
+    addPressVisuals('#dpad-live');
+
+    // Init
+    setLabel('Welcome');
+    setProgress(0);
+    updateGroupDesc();
+    checkOrientation();
+  })();
+
+  // Example integration for your experiment.js
+  // Inside experiment.js you can do:
+  // window.Experiment = {
+  //   start(hooks){
+  //     // your trial loop. Call hooks.showFixation(ms), hooks.showImage(src), hooks.armTimer(sec)
+  //     // when finished call hooks.onEnd('optional summary text')
+  //   },
+  //   onResponse(dir){
+  //     // consume participant response during a live trial
+  //   }
+  // };
+  </script>
 </body>
 </html>
