@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spatial Navigation Debug Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .warning {
+            color: orange;
+            font-weight: bold;
+        }
+        img {
+            max-width: 100px;
+            border: 2px solid #ddd;
+            margin: 5px;
+        }
+        pre {
+            background: #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Spatial Navigation Debug Test</h1>
+    <p>This page will help identify what's not working.</p>
+
+    <!-- Test 1: JavaScript Files -->
+    <div class="test-section">
+        <h2>Test 1: JavaScript Files Loading</h2>
+        <div id="js-test">Testing...</div>
+    </div>
+
+    <!-- Test 2: Stimulus Mappings -->
+    <div class="test-section">
+        <h2>Test 2: Stimulus Mappings</h2>
+        <div id="mapping-test">Testing...</div>
+    </div>
+
+    <!-- Test 3: Image Loading -->
+    <div class="test-section">
+        <h2>Test 3: Image Loading</h2>
+        <div id="image-test">Testing...</div>
+        <div id="image-preview"></div>
+    </div>
+
+    <!-- Test 4: Console Errors -->
+    <div class="test-section">
+        <h2>Test 4: Console Errors</h2>
+        <div id="console-test">
+            <p>Open browser console (F12) and check for red error messages.</p>
+            <p>Common errors to look for:</p>
+            <ul>
+                <li>404 Not Found (files missing)</li>
+                <li>Uncaught ReferenceError (variable not defined)</li>
+                <li>Failed to load resource</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Test 5: File Structure -->
+    <div class="test-section">
+        <h2>Test 5: Expected File Structure</h2>
+        <pre>
+mobile-spatial-nav/
+├── index.html
+├── experiment.html
+├── experiment.js
+├── stimulus_mappings.js
+├── debug.html (this file)
+└── stimuli/
+    ├── easy/
+    │   ├── 1.png
+    │   ├── 2.png
+    │   └── ... (up to 36.png)
+    ├── hard/
+    │   ├── 1.png
+    │   ├── 2.png
+    │   └── ... (up to 32.png)
+    └── control/
+        ├── 1.png
+        ├── 2.png
+        └── ... (up to 10.png)
+        </pre>
+    </div>
+
+    <!-- Test 6: Direct Image Tests -->
+    <div class="test-section">
+        <h2>Test 6: Direct Image Access</h2>
+        <div id="direct-test">Testing direct image paths...</div>
+    </div>
+
+    <script>
+        // Test 1: Check if experiment.js exists
+        const jsTest = document.getElementById('js-test');
+        const scriptTest = document.createElement('script');
+        scriptTest.src = 'experiment.js';
+        scriptTest.onload = () => {
+            jsTest.innerHTML = '<span class="success">✓ experiment.js loaded successfully</span>';
+            
+            // Check for required functions
+            if (typeof startExperiment === 'function') {
+                jsTest.innerHTML += '<br><span class="success">✓ startExperiment function found</span>';
+            } else {
+                jsTest.innerHTML += '<br><span class="error">✗ startExperiment function NOT found</span>';
+            }
+        };
+        scriptTest.onerror = () => {
+            jsTest.innerHTML = '<span class="error">✗ experiment.js failed to load</span>';
+        };
+        document.head.appendChild(scriptTest);
+
+        // Test 2: Check stimulus mappings
+        const mappingTest = document.getElementById('mapping-test');
+        const mappingScript = document.createElement('script');
+        mappingScript.src = 'stimulus_mappings.js';
+        mappingScript.onload = () => {
+            if (typeof stimulusMapping !== 'undefined') {
+                mappingTest.innerHTML = '<span class="success">✓ stimulus_mappings.js loaded</span><br>';
+                
+                // Check structure
+                if (stimulusMapping.easy) {
+                    mappingTest.innerHTML += `<span class="success">✓ Easy stimuli found: ${stimulusMapping.easy.length} items</span><br>`;
+                    
+                    // Show first item
+                    if (stimulusMapping.easy[0]) {
+                        mappingTest.innerHTML += `First easy stimulus: ${stimulusMapping.easy[0].file}<br>`;
+                    }
+                } else {
+                    mappingTest.innerHTML += '<span class="error">✗ Easy stimuli NOT found</span><br>';
+                }
+                
+                if (stimulusMapping.hard) {
+                    mappingTest.innerHTML += `<span class="success">✓ Hard stimuli found: ${stimulusMapping.hard.length} items</span><br>`;
+                } else {
+                    mappingTest.innerHTML += '<span class="error">✗ Hard stimuli NOT found</span><br>';
+                }
+                
+                if (stimulusMapping.control) {
+                    mappingTest.innerHTML += `<span class="success">✓ Control stimuli found: ${stimulusMapping.control.length} items</span><br>`;
+                } else {
+                    mappingTest.innerHTML += '<span class="error">✗ Control stimuli NOT found</span><br>';
+                }
+            } else {
+                mappingTest.innerHTML = '<span class="error">✗ stimulusMapping variable NOT defined</span>';
+            }
+        };
+        mappingScript.onerror = () => {
+            mappingTest.innerHTML = '<span class="error">✗ stimulus_mappings.js failed to load</span>';
+        };
+        document.head.appendChild(mappingScript);
+
+        // Test 3: Try loading images
+        setTimeout(() => {
+            const imageTest = document.getElementById('image-test');
+            const imagePreview = document.getElementById('image-preview');
+            
+            if (typeof stimulusMapping !== 'undefined' && stimulusMapping.easy && stimulusMapping.easy[0]) {
+                imageTest.innerHTML = 'Testing image loading...<br>';
+                
+                // Test first easy image
+                const testImg1 = new Image();
+                testImg1.onload = () => {
+                    imageTest.innerHTML += `<span class="success">✓ ${stimulusMapping.easy[0].file} loaded</span><br>`;
+                    imagePreview.appendChild(testImg1);
+                };
+                testImg1.onerror = () => {
+                    imageTest.innerHTML += `<span class="error">✗ ${stimulusMapping.easy[0].file} NOT found</span><br>`;
+                    imageTest.innerHTML += `<span class="warning">Check if file exists at: ${window.location.origin}${window.location.pathname.replace('debug.html', '')}${stimulusMapping.easy[0].file}</span><br>`;
+                };
+                testImg1.src = stimulusMapping.easy[0].file;
+                
+                // Test first hard image
+                if (stimulusMapping.hard && stimulusMapping.hard[0]) {
+                    const testImg2 = new Image();
+                    testImg2.onload = () => {
+                        imageTest.innerHTML += `<span class="success">✓ ${stimulusMapping.hard[0].file} loaded</span><br>`;
+                        imagePreview.appendChild(testImg2);
+                    };
+                    testImg2.onerror = () => {
+                        imageTest.innerHTML += `<span class="error">✗ ${stimulusMapping.hard[0].file} NOT found</span><br>`;
+                    };
+                    testImg2.src = stimulusMapping.hard[0].file;
+                }
+                
+                // Test first control image
+                if (stimulusMapping.control && stimulusMapping.control[0]) {
+                    const testImg3 = new Image();
+                    testImg3.onload = () => {
+                        imageTest.innerHTML += `<span class="success">✓ ${stimulusMapping.control[0].file} loaded</span><br>`;
+                        imagePreview.appendChild(testImg3);
+                    };
+                    testImg3.onerror = () => {
+                        imageTest.innerHTML += `<span class="error">✗ ${stimulusMapping.control[0].file} NOT found</span><br>`;
+                    };
+                    testImg3.src = stimulusMapping.control[0].file;
+                }
+            } else {
+                imageTest.innerHTML = '<span class="warning">⚠ Waiting for stimulus mappings to load...</span>';
+            }
+        }, 1000);
+
+        // Test 6: Direct path tests
+        const directTest = document.getElementById('direct-test');
+        const directPaths = [
+            'stimuli/easy/1.png',
+            'stimuli/hard/1.png',
+            'stimuli/control/1.png',
+            'stimuli/1.png',  // Test flat structure too
+        ];
+        
+        directTest.innerHTML = '';
+        directPaths.forEach(path => {
+            const img = new Image();
+            img.onload = () => {
+                directTest.innerHTML += `<span class="success">✓ Found: ${path}</span><br>`;
+            };
+            img.onerror = () => {
+                directTest.innerHTML += `<span class="error">✗ Not found: ${path}</span><br>`;
+            };
+            img.src = path;
+        });
+
+        // Add error listener
+        window.addEventListener('error', (e) => {
+            console.error('Global error caught:', e);
+        });
+    </script>
+
+    <div class="test-section" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+        <h3>📋 Next Steps:</h3>
+        <ol>
+            <li>Save this file as <strong>debug.html</strong> in your repository</li>
+            <li>Push it to GitHub</li>
+            <li>Visit: <a href="https://melodyfschwenk.github.io/mobile-spatial-nav/debug.html" target="_blank">https://melodyfschwenk.github.io/mobile-spatial-nav/debug.html</a></li>
+            <li>Share the results or screenshot with me</li>
+        </ol>
+    </div>
+
+</body>
+</html>
