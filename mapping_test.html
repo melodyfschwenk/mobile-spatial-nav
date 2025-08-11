@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Mapping Test</title>
+    <script src="stimulus_mappings.js"></script>
+</head>
+<body>
+    <h1>Stimulus Mapping Test</h1>
+    <pre id="output"></pre>
+    <script>
+        const output = document.getElementById('output');
+        let text = 'Stimulus Counts:\n';
+        text += `Easy: ${stimulusMapping.easy.length} stimuli\n`;
+        text += `Hard: ${stimulusMapping.hard.length} stimuli\n`;
+        text += `Control: ${stimulusMapping.control.length} stimuli\n`;
+        text += `Total: ${stimulusMapping.easy.length + stimulusMapping.hard.length + stimulusMapping.control.length} stimuli\n\n`;
+        
+        // Test loading first image from each category
+        text += 'Testing first image from each category:\n';
+        const testImages = [
+            stimulusMapping.easy[0],
+            stimulusMapping.hard[0],
+            stimulusMapping.control[0]
+        ];
+        
+        testImages.forEach(stim => {
+            const img = new Image();
+            img.onload = () => {
+                output.textContent += `✓ ${stim.file} loaded successfully\n`;
+            };
+            img.onerror = () => {
+                output.textContent += `✗ ${stim.file} failed to load\n`;
+            };
+            img.src = stim.file;
+        });
+        
+        output.textContent = text;
+    </script>
+</body>
+</html>
