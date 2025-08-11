@@ -2,32 +2,262 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Mobile Spatial Navigation</title>
+    <title>Spatial Navigation Task - Mobile Version</title>
     <style>
-        /* Ensure touch-friendly interface */
-        body {
+        * {
             margin: 0;
             padding: 0;
-            touch-action: manipulation;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
         }
-        
-        /* Touch-friendly buttons */
-        .touch-button {
-            min-height: 44px;
-            min-width: 44px;
-            padding: 10px;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            font-size: clamp(24px, 5vw, 32px);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: clamp(14px, 3vw, 18px);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .device-check {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .device-check.mobile {
+            border-color: #4CAF50;
+            background: #f0fff4;
+        }
+
+        .device-check .icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: clamp(16px, 3.5vw, 20px);
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            color: #555;
+            font-size: clamp(12px, 2.5vw, 16px);
+        }
+
+        .info-item strong {
+            min-width: 100px;
+            color: #333;
+        }
+
+        .requirements {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+
+        .requirements h4 {
+            margin-bottom: 10px;
+            color: #856404;
+            font-size: clamp(14px, 3vw, 18px);
+        }
+
+        .requirements ul {
+            margin: 10px 0;
+            padding-left: 20px;
+            font-size: clamp(12px, 2.5vw, 16px);
+        }
+
+        .start-button {
+            display: block;
+            width: 100%;
+            padding: 18px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: clamp(16px, 3.5vw, 20px);
+            font-weight: bold;
+            text-align: center;
+            margin: 30px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            border: none;
+            cursor: pointer;
+        }
+
+        .start-button:hover, .start-button:active {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+            font-size: clamp(11px, 2vw, 14px);
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+                border-radius: 15px;
+            }
+            
+            .info-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .info-item strong {
+                margin-bottom: 5px;
+            }
+        }
+
+        /* Prevent iOS bounce */
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
         }
     </style>
 </head>
 <body>
-    <!-- Your content here -->
-    
-    <!-- Make sure paths are relative -->
-    <script src="./js/app.js"></script>
+    <div class="container">
+        <h1>Spatial Navigation Task</h1>
+        <p class="subtitle">Mobile-Optimized Version</p>
+        
+        <div class="device-check" id="deviceCheck">
+            <div class="icon" id="deviceIcon">📱</div>
+            <div id="deviceMessage">Checking device...</div>
+        </div>
+        
+        <div class="info-box">
+            <h3>Study Information</h3>
+            <div class="info-item">
+                <strong>Duration:</strong> <span>~20 minutes</span>
+            </div>
+            <div class="info-item">
+                <strong>Trials:</strong> <span>135 trials (9 blocks)</span>
+            </div>
+            <div class="info-item">
+                <strong>Task Types:</strong> <span>Player & Map view</span>
+            </div>
+            <div class="info-item">
+                <strong>Practice:</strong> <span>4 practice trials</span>
+            </div>
+        </div>
+        
+        <div class="requirements">
+            <h4>⚠️ Requirements</h4>
+            <ul>
+                <li>Stable internet connection</li>
+                <li>Quiet environment</li>
+                <li>Full attention for ~20 minutes</li>
+                <li>Chrome or Safari browser</li>
+            </ul>
+        </div>
+        
+        <button onclick="startExperiment()" class="start-button">
+            Begin Experiment
+        </button>
+        
+        <div class="info-box">
+            <h3>How It Works</h3>
+            <p style="margin-bottom: 10px;">Navigate through mazes using two strategies:</p>
+            <ul style="color: #555; font-size: clamp(12px, 2.5vw, 16px);">
+                <li><strong>Player View:</strong> Navigate as the player</li>
+                <li><strong>Map View:</strong> Use compass directions</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>Questions? Contact: research@example.edu</p>
+            <p style="margin-top: 10px;">Your data is kept confidential and anonymous.</p>
+        </div>
+    </div>
+
+    <script>
+        // Device detection
+        function detectDevice() {
+            const check = document.getElementById('deviceCheck');
+            const icon = document.getElementById('deviceIcon');
+            const msg = document.getElementById('deviceMessage');
+            
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isTablet = /iPad|Android/i.test(navigator.userAgent) && Math.min(window.screen.width, window.screen.height) >= 768;
+            
+            if (isMobile || isTablet) {
+                check.classList.add('mobile');
+                icon.textContent = isTablet ? '📱' : '📱';
+                msg.innerHTML = `<strong>✓ ${isTablet ? 'Tablet' : 'Mobile'} device detected</strong><br>Ready for mobile version`;
+            } else {
+                icon.textContent = '💻';
+                msg.innerHTML = `<strong>Desktop detected</strong><br>This version is optimized for touch devices`;
+            }
+        }
+
+        function startExperiment() {
+            window.location.href = 'experiment.html';
+        }
+
+        // Run device detection on load
+        window.addEventListener('DOMContentLoaded', detectDevice);
+        window.addEventListener('resize', detectDevice);
+    </script>
 </body>
 </html>
