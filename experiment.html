@@ -17,27 +17,19 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       background: #f5f5f5;
-      overflow: hidden;
-      position: fixed;
-      inset: 0;
+      overflow: hidden; position: fixed; inset: 0;
+      -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
     }
 
-    #experiment-container {
-      width: 100vw; height: 100vh;
-      display: flex; flex-direction: column; position: relative;
-    }
+    #experiment-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; position: relative; }
 
     /* Top bar */
-    .topbar {
-      position: absolute; top: 0; left: 0; right: 0; height: 56px; background: #fff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 12px; z-index: 100;
-    }
-    .topbar .progress { position: relative; flex: 1; margin: 0 12px; height: 6px; background: #edf2f7; border-radius: 999px; }
-    .topbar .progress > span { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 999px; transition: width 300ms ease; }
+    .topbar { position: absolute; top: 0; left: 0; right: 0; height: 56px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 10px; padding: 0 12px; z-index: 100; }
     .topbar .label { font-size: 14px; font-weight: 600; color: #2d3748; min-width: 140px; }
+    .topbar .progress { position: relative; flex: 1; height: 6px; background: #edf2f7; border-radius: 999px; }
+    .topbar .progress > span { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 999px; transition: width 300ms ease; }
     .topbar .timer { font-variant-numeric: tabular-nums; font-size: 14px; color: #4a5568; min-width: 72px; text-align: right; }
+    .topbar .controls-btn { background: transparent; border: 0; color: #4a5568; text-decoration: underline; cursor: pointer; font: inherit; }
 
     /* Global buttons */
     .button { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: 0; border-radius: 22px; padding: 12px 20px; font-weight: 700; cursor: pointer; transition: transform 120ms ease, opacity 120ms ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
@@ -52,14 +44,20 @@
 
     /* Data entry */
     #data-entry-screen { justify-content: center; align-items: center; padding: 16px; }
-    .card { width: 100%; max-width: 520px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 24px; }
-    .card h2 { text-align: center; color: #1a202c; margin-bottom: 12px; }
-    .card p.muted { text-align: center; color: #718096; font-size: 14px; margin-bottom: 20px; }
-    .row { margin-bottom: 14px; }
+    .card { width: 100%; max-width: 560px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 24px; }
+    .card h2 { text-align: center; color: #1a202c; margin-bottom: 6px; }
+    .card p.muted { text-align: center; color: #718096; font-size: 14px; margin-bottom: 14px; }
+    .row { margin-bottom: 12px; }
     label { display: block; font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
     select, input[type="number"], input[type="text"] { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #e2e8f0; border-radius: 10px; background: #fff; }
     select:focus, input:focus { outline: none; border-color: #667eea; }
     .hint { font-size: 12px; color: #718096; margin-top: 6px; font-style: italic; }
+
+    /* Control mode chooser */
+    .chooser { margin-top: 8px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
+    .chooser h4 { margin-bottom: 8px; font-size: 14px; color: #2d3748; }
+    .chooser .opts { display: grid; gap: 8px; }
+    .chooser label { font-weight: 500; display: flex; align-items: center; gap: 8px; margin: 0; }
 
     /* Button training */
     #button-training-screen { flex-direction: column; }
@@ -98,7 +96,7 @@
 
     /* Stimulus */
     #stimulus-screen { flex-direction: column; }
-    .stage-wrap { flex: 1; display: grid; place-items: center; padding: 16px; position: relative; }
+    .stage-wrap { flex: 1; display: grid; place-items: center; padding: 16px; position: relative; touch-action: none; }
     .stage { width: min(420px, 82vw); height: min(420px, 82vw); background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; display: grid; place-items: center; position: relative; }
     #stimulus-image { max-width: 100%; max-height: 100%; display: none; }
     .fix { position: absolute; width: 60px; height: 60px; display: none; }
@@ -130,6 +128,11 @@
     /* Desktop hint */
     .kbd { display: none; text-align: center; padding: 8px; color: #4a5568; font-size: 14px; }
     @media (min-width: 768px) { .kbd { display: block; } }
+
+    /* Controls modal */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 300; }
+    .modal.show { display: flex; }
+    .modal .panel { width: 92vw; max-width: 520px; background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
   </style>
 </head>
 <body>
@@ -138,6 +141,7 @@
       <div class="label" id="top-label">Welcome</div>
       <div class="progress" aria-hidden="true"><span id="progress-fill"></span></div>
       <div class="timer" id="timer"></div>
+      <button class="controls-btn" id="controls-open" title="Change controls">Controls</button>
     </div>
 
     <div class="bar-timer" id="response-bar"><span></span></div>
@@ -146,7 +150,7 @@
     <section id="data-entry-screen" class="screen active" aria-label="Participant info">
       <div class="card" role="form">
         <h2>Participant information</h2>
-        <p class="muted">Best on a computer with keyboard. Phone and tablet are fine if you have a keyboard or use the on-screen arrows.</p>
+        <p class="muted">Best on a computer with keyboard. Phone and tablet are fine if you prefer swipe or tap controls.</p>
 
         <div class="row">
           <label for="participant-group">Participant group</label>
@@ -187,30 +191,40 @@
           </select>
         </div>
 
-        <div class="row" style="display:flex; gap:8px; flex-wrap: wrap; justify-content: center; margin-top: 6px;">
+        <div class="chooser" role="group" aria-label="Choose controls">
+          <h4>Controls</h4>
+          <div class="opts">
+            <label><input type="radio" name="controlMode" value="swipe" checked /> Swipe anywhere on the task area</label>
+            <label><input type="radio" name="controlMode" value="tap-edges" /> Tap near the top, bottom, left, or right edge</label>
+            <label><input type="radio" name="controlMode" value="dpad" /> On-screen arrow buttons</label>
+          </div>
+          <div class="hint">You can change this later with the Controls button.</div>
+        </div>
+
+        <div class="row" style="display:flex; gap:8px; flex-wrap: wrap; justify-content: center; margin-top: 10px;">
           <button class="button" id="start-btn" disabled>Continue</button>
           <button class="button secondary" id="skip-all-btn">Skip all tasks</button>
         </div>
-        <p class="hint" style="text-align:center; margin-top:10px;">All tasks are voluntary. You may skip at any time.</p>
+        <p class="hint" style="text-align:center; margin-top:8px;">All tasks are voluntary. You may skip at any time.</p>
       </div>
     </section>
 
     <!-- Button training screen -->
     <section id="button-training-screen" class="screen" aria-label="Practice controls">
-      <div class="helper">Practice mode</div>
+      <div class="helper" id="practice-mode-label">Practice mode</div>
       <div class="skipper"><button class="linkish" id="skip-practice">Skip practice</button></div>
 
       <div class="train-wrap">
         <div class="train">
-          <h3>Button training</h3>
-          <p class="prompt">Press the highlighted arrow.</p>
+          <h3 id="practice-title">Control practice</h3>
+          <p class="prompt" id="practice-instruction">Swipe the arrow direction shown below.</p>
           <div class="targets" aria-hidden="true">
             <div class="tgt" id="t-up">↑</div>
             <div class="tgt" id="t-down">↓</div>
             <div class="tgt" id="t-left">←</div>
             <div class="tgt" id="t-right">→</div>
           </div>
-          <div class="prompt" id="train-prompt">Press: <span id="need">↑</span></div>
+          <div class="prompt" id="train-prompt">Do: <span id="need">↑</span></div>
           <div class="kbd">Desktop tip, use the keyboard arrows.</div>
           <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
             <button class="button" id="practice-continue" disabled>Continue</button>
@@ -219,7 +233,7 @@
         </div>
       </div>
 
-      <div class="controls">
+      <div class="controls" id="dpad-practice-wrap" style="display:none;">
         <div class="dpad" id="dpad">
           <button class="d up dpad-btn" data-dir="up">↑</button>
           <button class="d down dpad-btn" data-dir="down">↓</button>
@@ -235,8 +249,8 @@
       <div class="skipper"><button class="linkish" id="skip-task">Skip this task</button></div>
       <div class="instruction">
         <div id="nav-badge" class="badge control">Navigation task</div>
-        <p id="instruction-text">You will briefly see a fixation cross, then a grid. Choose the matching direction using the arrows or keyboard. Try to respond quickly and accurately. This block will take a few minutes.</p>
-        <p class="hint">On mobile, we will ask to enter full screen on the next step for a smoother experience.</p>
+        <p id="instruction-text">You will see a fixation cross, then a grid. Respond using your chosen control: swipe, tap edges, or arrow buttons. Try to respond quickly and accurately. This block will take a few minutes.</p>
+        <p class="hint">On mobile, we can enter full screen on the next step to reduce distractions.</p>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top: 8px;">
           <button class="button" id="enter-fullscreen">Continue</button>
           <button class="button secondary" id="no-fullscreen">Continue without full screen</button>
@@ -247,15 +261,15 @@
     <!-- Stimulus screen -->
     <section id="stimulus-screen" class="screen" aria-label="Task">
       <div class="skipper"><button class="linkish" id="skip-midtask">Stop and skip</button></div>
-      <div class="stage-wrap">
-        <div class="stage">
+      <div class="stage-wrap" id="stage-wrap">
+        <div class="stage" id="stage">
           <img id="stimulus-image" alt="Stimulus" />
           <div class="fix" id="fix"></div>
         </div>
         <div class="overlay" id="feedback-overlay">✓</div>
         <div class="kbd">Desktop tip, use the keyboard arrows.</div>
       </div>
-      <div class="controls">
+      <div class="controls" id="dpad-live-wrap" style="display:none;">
         <div class="dpad" id="dpad-live">
           <button class="d up live-btn" data-dir="up">↑</button>
           <button class="d down live-btn" data-dir="down">↓</button>
@@ -286,6 +300,22 @@
         <div style="margin-top:14px;"><button class="button secondary" id="orient-dismiss">OK</button></div>
       </div>
     </div>
+
+    <!-- Controls modal -->
+    <div class="modal" id="controls-modal" aria-modal="true" role="dialog" aria-label="Controls">
+      <div class="panel">
+        <h3 style="margin-bottom:8px;">Choose controls</h3>
+        <div class="opts" style="margin-bottom:10px;">
+          <label><input type="radio" name="controlModeModal" value="swipe" /> Swipe anywhere on the task area</label>
+          <label><input type="radio" name="controlModeModal" value="tap-edges" /> Tap near the top, bottom, left, or right edge</label>
+          <label><input type="radio" name="controlModeModal" value="dpad" /> On-screen arrow buttons</label>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="button secondary" id="controls-cancel">Cancel</button>
+          <button class="button" id="controls-save">Save</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -304,61 +334,40 @@
       timer: byId('timer'),
       respBar: byId('response-bar'),
       fb: byId('feedback-overlay'),
-      orient: byId('orient')
+      orient: byId('orient'),
+      controlsOpen: byId('controls-open'),
+      controlsModal: byId('controls-modal'),
+      controlsCancel: byId('controls-cancel'),
+      controlsSave: byId('controls-save')
     };
 
     const form = {
-      group: byId('participant-group'),
-      age: byId('age'),
-      gender: byId('gender'),
-      hand: byId('handedness'),
-      start: byId('start-btn'),
-      skipAll: byId('skip-all-btn'),
-      groupDesc: byId('group-desc')
+      group: byId('participant-group'), age: byId('age'), gender: byId('gender'), hand: byId('handedness'),
+      start: byId('start-btn'), skipAll: byId('skip-all-btn'), groupDesc: byId('group-desc'),
+      modeRadios: document.querySelectorAll('input[name="controlMode"]')
     };
 
     const training = {
-      need: byId('need'),
-      t: { up: byId('t-up'), down: byId('t-down'), left: byId('t-left'), right: byId('t-right') },
-      continue: byId('practice-continue'),
-      restart: byId('practice-restart'),
-      skip: byId('skip-practice')
+      title: byId('practice-title'), instruction: byId('practice-instruction'),
+      need: byId('need'), t: { up: byId('t-up'), down: byId('t-down'), left: byId('t-left'), right: byId('t-right') },
+      continue: byId('practice-continue'), restart: byId('practice-restart'), skip: byId('skip-practice'),
+      dpadWrap: byId('dpad-practice-wrap')
     };
 
-    const instr = {
-      badge: byId('nav-badge'),
-      text: byId('instruction-text'),
-      fs: byId('enter-fullscreen'),
-      nfs: byId('no-fullscreen'),
-      skip: byId('skip-task')
-    };
+    const instr = { badge: byId('nav-badge'), text: byId('instruction-text'), fs: byId('enter-fullscreen'), nfs: byId('no-fullscreen'), skip: byId('skip-task') };
 
-    const live = {
-      img: byId('stimulus-image'),
-      fix: byId('fix'),
-      dpad: byId('dpad-live'),
-      skip: byId('skip-midtask')
-    };
+    const live = { img: byId('stimulus-image'), fix: byId('fix'), dpadWrap: byId('dpad-live-wrap'), skip: byId('skip-midtask'), stage: byId('stage'), stageWrap: byId('stage-wrap') };
 
-    const end = {
-      title: byId('fb-title'),
-      details: byId('fb-details'),
-      dl: byId('download-btn'),
-      exit: byId('exit-link')
-    };
+    const end = { title: byId('fb-title'), details: byId('fb-details'), dl: byId('download-btn'), exit: byId('exit-link') };
 
     const orientDismiss = byId('orient-dismiss');
 
     // State
     const state = {
-      participant: {},
-      progress: 0,
-      trainingOrder: [],
-      trainingIndex: 0,
-      trainingDone: { up:false, down:false, left:false, right:false },
-      fullscreenWanted: false,
-      running: false,
-      startTime: null
+      participant: {}, progress: 0,
+      trainingOrder: [], trainingIndex: 0, trainingDone: { up:false, down:false, left:false, right:false },
+      fullscreenWanted: false, running: false, startTime: null,
+      controlMode: 'swipe' // default
     };
 
     // Helpers
@@ -381,48 +390,39 @@
 
     // Data entry enable logic
     function updateGroupDesc(){
-      const v = form.group.value;
-      const map = {
-        DF:'Deaf, fluent in sign language',
-        HF:'Hearing, fluent in sign language',
-        DNF:'Deaf, not fluent in sign language',
-        HNF:'Hearing, not fluent in sign language',
-        HNS:'Hearing, non-signer'
-      };
+      const v = form.group.value; const map = { DF:'Deaf, fluent in sign language', HF:'Hearing, fluent in sign language', DNF:'Deaf, not fluent in sign language', HNF:'Hearing, not fluent in sign language', HNS:'Hearing, non-signer' };
       form.groupDesc.textContent = map[v] || '';
     }
-
-    function checkReady(){
-      const ok = form.group.value && form.age.value && form.gender.value && form.hand.value;
-      form.start.disabled = !ok;
-      return ok;
-    }
-
+    function checkReady(){ const ok = form.group.value && form.age.value && form.gender.value && form.hand.value; form.start.disabled = !ok; return ok; }
     form.group.addEventListener('change', () => { updateGroupDesc(); checkReady(); });
     form.age.addEventListener('input', checkReady);
     form.gender.addEventListener('change', checkReady);
     form.hand.addEventListener('change', checkReady);
 
+    // Control mode selection
+    form.modeRadios.forEach(r => r.addEventListener('change', e => { state.controlMode = e.target.value; }));
+
     // Start flow
     form.start.addEventListener('click', () => {
-      state.participant = {
-        group: form.group.value,
-        age: Number(form.age.value),
-        gender: form.gender.value,
-        handedness: form.hand.value,
-        pid: genPID()
-      };
-      setLabel('Practice');
-      setProgress(10);
-      setupPractice();
-      show(screens.practice);
-      checkOrientation();
+      state.participant = { group: form.group.value, age: Number(form.age.value), gender: form.gender.value, handedness: form.hand.value, pid: genPID() };
+      setLabel('Practice'); setProgress(10);
+      setupPractice(); show(screens.practice); checkOrientation();
     });
-
     form.skipAll.addEventListener('click', () => endEarly('You chose to skip all tasks.'));
 
     // Practice logic
     function setupPractice(){
+      // Adjust UI by control mode
+      const mode = state.controlMode;
+      training.title.textContent = 'Control practice';
+      if(mode === 'swipe') training.instruction.textContent = 'Swipe the arrow direction shown below anywhere inside the box.';
+      if(mode === 'tap-edges') training.instruction.textContent = 'Tap near the top, bottom, left, or right edge of the box to match the arrow.';
+      if(mode === 'dpad') training.instruction.textContent = 'Press the arrow buttons that match the arrow shown.';
+      byId('practice-mode-label').textContent = mode === 'dpad' ? 'Practice mode - arrows' : (mode === 'tap-edges' ? 'Practice mode - tap edges' : 'Practice mode - swipe');
+
+      // Show or hide the dpad in practice
+      training.dpadWrap.style.display = mode === 'dpad' ? 'block' : 'none';
+
       training.trainingDone = { up:false, down:false, left:false, right:false };
       training.trainingIndex = 0;
       training.trainingOrder = shuffle(['up','down','left','right']);
@@ -434,210 +434,146 @@
     training.restart.addEventListener('click', setupPractice);
     training.skip.addEventListener('click', () => goToInstructions());
 
-    function onPracticePress(dir){
+    function markPractice(dir){
       const need = training.trainingOrder[training.trainingIndex];
-      highlightDpad(dir);
       if(dir === need){
-        training.trainingDone[dir] = true;
+        training.t[dir].classList.add('done'); vibrate(12);
         training.trainingIndex++;
-        training.t[dir].classList.add('done');
-        vibrate(12);
         if(training.trainingIndex < training.trainingOrder.length){
           training.need.textContent = arrow(training.trainingOrder[training.trainingIndex]);
-        } else {
-          training.continue.disabled = false;
-        }
+        } else { training.continue.disabled = false; }
       }
     }
 
     training.continue.addEventListener('click', goToInstructions);
 
     // Instruction screen
-    function goToInstructions(){
-      setLabel('Instructions');
-      setProgress(30);
-      show(screens.instruction);
-    }
-
-    instr.fs.addEventListener('click', async () => {
-      state.fullscreenWanted = true;
-      await requestFullscreen();
-      startTask();
-    });
+    function goToInstructions(){ setLabel('Instructions'); setProgress(30); show(screens.instruction); }
+    instr.fs.addEventListener('click', async () => { state.fullscreenWanted = true; await requestFullscreen(); startTask(); });
     instr.nfs.addEventListener('click', () => { state.fullscreenWanted = false; startTask(); });
-
     instr.skip.addEventListener('click', () => endEarly('You skipped this task. Thank you for participating.'));
 
     // Task live controls
     live.skip.addEventListener('click', () => endEarly('You stopped the task. Your progress was saved.'));
 
-    // Dpad and keyboard handlers (practice and live)
-    document.addEventListener('click', e => {
-      const btn = e.target.closest('.dpad-btn, .live-btn');
-      if(!btn) return;
-      const dir = btn.getAttribute('data-dir');
-      ripple(e.clientX, e.clientY);
-      if(screens.practice.classList.contains('active')) onPracticePress(dir);
-      if(screens.task.classList.contains('active')) onResponse(dir);
-    });
-
+    // Pointer and key handlers
     document.addEventListener('keydown', e => {
       const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
-      if(map[e.key]){
-        if(screens.practice.classList.contains('active')) onPracticePress(map[e.key]);
-        if(screens.task.classList.contains('active')) onResponse(map[e.key]);
-      }
+      if(map[e.key]){ if(screens.practice.classList.contains('active')) markPractice(map[e.key]); if(screens.task.classList.contains('active')) onResponse(map[e.key]); }
     });
 
-    function highlightDpad(dir){
-      const selector = screens.practice.classList.contains('active') ? '.dpad-btn' : '.live-btn';
-      const btn = document.querySelector(selector + `[data-dir="${dir}"]`);
-      if(btn){ btn.classList.add('pressed'); setTimeout(() => btn.classList.remove('pressed'), 140); }
+    // Dpad press visuals
+    function addPressVisuals(containerSel){ const container = document.querySelector(containerSel); if(!container) return; ['pointerdown','pointerup','pointerleave','pointercancel'].forEach(evt => { container.addEventListener(evt, e => { const b = e.target.closest('button'); if(!b) return; if(evt==='pointerdown') b.classList.add('pressed'); else b.classList.remove('pressed'); }); }); }
+    addPressVisuals('#dpad'); addPressVisuals('#dpad-live');
+
+    // Stage interactions for swipe and tap-edges
+    let touchStart = null;
+    function stageStart(e){
+      e.preventDefault();
+      const t = getPoint(e); touchStart = t;
     }
+    function stageEnd(e){
+      e.preventDefault();
+      if(!touchStart) return;
+      const start = touchStart, endp = getPoint(e); touchStart = null;
+      const dx = endp.x - start.x, dy = endp.y - start.y;
+      const rect = live.stage.getBoundingClientRect();
+      const threshold = Math.max(24, Math.min(rect.width, rect.height) * 0.08);
+      const mode = state.controlMode;
+      if(mode === 'swipe'){
+        const adx = Math.abs(dx), ady = Math.abs(dy);
+        if(adx < threshold && ady < threshold) return; // too small
+        const dir = adx > ady ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+        handleStageDirection(dir, endp.clientX, endp.clientY);
+      } else if(mode === 'tap-edges'){
+        const x = endp.x - rect.left, y = endp.y - rect.top;
+        const w = rect.width, h = rect.height;
+        const margin = 0.33; // top third, bottom third, left third, right third
+        let dir = null;
+        if(y < h * margin) dir = 'up';
+        else if(y > h * (1 - margin)) dir = 'down';
+        else if(x < w * margin) dir = 'left';
+        else if(x > w * (1 - margin)) dir = 'right';
+        if(dir) handleStageDirection(dir, endp.clientX, endp.clientY);
+      } else {
+        // dpad mode does not use stage interactions
+      }
+    }
+
+    function getPoint(e){
+      if(e.changedTouches && e.changedTouches[0]){ const t = e.changedTouches[0]; return { x: t.clientX, y: t.clientY, clientX: t.clientX, clientY: t.clientY }; }
+      return { x: e.clientX, y: e.clientY, clientX: e.clientX, clientY: e.clientY };
+    }
+
+    function handleStageDirection(dir, cx, cy){ ripple(cx, cy); if(screens.practice.classList.contains('active')) markPractice(dir); if(screens.task.classList.contains('active')) onResponse(dir); highlightOverlay(dir); vibrate(8); }
+
+    function highlightOverlay(dir){ const sym = arrow(dir); ui.fb.textContent = sym; ui.fb.classList.add('show'); setTimeout(() => ui.fb.classList.remove('show'), 220); }
+
+    // Attach listeners with passive false so we can prevent default scroll
+    ['touchstart','pointerdown','mousedown'].forEach(evt => live.stageWrap.addEventListener(evt, stageStart, { passive: false }));
+    ['touchend','pointerup','mouseup','touchcancel','pointercancel','mouseleave'].forEach(evt => live.stageWrap.addEventListener(evt, stageEnd, { passive: false }));
+
+    // Top bar controls modal
+    ui.controlsOpen.addEventListener('click', openControlsModal);
+    ui.controlsCancel.addEventListener('click', closeControlsModal);
+    ui.controlsSave.addEventListener('click', () => { const chosen = document.querySelector('input[name="controlModeModal"]:checked'); if(chosen){ state.controlMode = chosen.value; applyControlMode(); } closeControlsModal(); });
+
+    function openControlsModal(){
+      // sync radio state
+      const radios = ui.controlsModal.querySelectorAll('input[name="controlModeModal"]');
+      radios.forEach(r => r.checked = (r.value === state.controlMode));
+      ui.controlsModal.classList.add('show');
+    }
+    function closeControlsModal(){ ui.controlsModal.classList.remove('show'); }
 
     // Minimal task orchestration
     async function startTask(){
-      setLabel('Task');
-      setProgress(45);
-      show(screens.task);
-      state.running = true;
-      state.startTime = Date.now();
-      // If your experiment.js exposes a start function, call it. Pass simple hooks.
-      if(window.Experiment && typeof window.Experiment.start === 'function'){
-        window.Experiment.start(hooks());
-      } else {
-        // Fallback demo so the shell is testable without experiment.js
-        demoTrials();
-      }
+      setLabel('Task'); setProgress(45); show(screens.task); state.running = true; state.startTime = Date.now();
+      applyControlMode();
+      if(window.Experiment && typeof window.Experiment.start === 'function') window.Experiment.start(hooks()); else demoTrials();
     }
 
-    function hooks(){
-      return {
-        showFixation: ms => showFix(ms),
-        showImage: src => showStim(src),
-        armTimer: seconds => armResponseTimer(seconds),
-        onEnd: summary => finish(summary)
-      };
+    function applyControlMode(){
+      // Show or hide dpad wraps
+      const useDpad = state.controlMode === 'dpad';
+      live.dpadWrap.style.display = useDpad ? 'block' : 'none';
     }
 
-    function showFix(ms=500){
-      live.img.style.display = 'none';
-      live.fix.style.display = 'block';
-      return new Promise(res => setTimeout(() => { live.fix.style.display = 'none'; res(); }, ms));
-    }
+    function hooks(){ return { showFixation: ms => showFix(ms), showImage: src => showStim(src), armTimer: seconds => armResponseTimer(seconds), onEnd: summary => finish(summary) }; }
 
-    function showStim(src){
-      live.fix.style.display = 'none';
-      live.img.src = src || '';
-      live.img.style.display = 'block';
-    }
+    function showFix(ms=500){ live.img.style.display = 'none'; live.fix.style.display = 'block'; return new Promise(res => setTimeout(() => { live.fix.style.display = 'none'; res(); }, ms)); }
+    function showStim(src){ live.fix.style.display = 'none'; live.img.src = src || ''; live.img.style.display = 'block'; }
+    function armResponseTimer(seconds=3){ ui.respBar.classList.remove('active'); void ui.respBar.offsetWidth; ui.respBar.classList.add('active'); const span = ui.respBar.querySelector('span'); span.style.animationDuration = seconds + 's'; }
 
-    function armResponseTimer(seconds=3){
-      ui.respBar.classList.remove('active');
-      void ui.respBar.offsetWidth; // reset
-      ui.respBar.classList.add('active');
-      const span = ui.respBar.querySelector('span');
-      span.style.animationDuration = seconds + 's';
-    }
+    function onResponse(dir){ if(window.Experiment && typeof window.Experiment.onResponse === 'function') window.Experiment.onResponse(dir); else nextDemo(); feedback('✓'); }
+    function feedback(symbol){ ui.fb.textContent = symbol || '✓'; ui.fb.classList.add('show'); setTimeout(() => ui.fb.classList.remove('show'), 200); }
 
-    function onResponse(dir){
-      vibrate(8);
-      feedback('✓');
-      if(window.Experiment && typeof window.Experiment.onResponse === 'function'){
-        window.Experiment.onResponse(dir);
-      } else {
-        // Demo mode consumes response directly
-        nextDemo();
-      }
-    }
-
-    function feedback(symbol){ ui.fb.textContent = symbol || '✓'; ui.fb.classList.add('show'); setTimeout(() => ui.fb.classList.remove('show'), 260); }
-
-    function finish(summary){
-      state.running = false;
-      exitFullscreen();
-      setProgress(100);
-      setLabel('Finished');
-      end.title.textContent = 'Thank you';
-      end.details.textContent = summary || 'You have completed the task.';
-      end.dl.style.display = 'none';
-      show(screens.end);
-    }
-
-    function endEarly(reason){
-      exitFullscreen();
-      setProgress(100);
-      setLabel('Finished');
-      end.title.textContent = 'Session ended';
-      end.details.textContent = reason || 'Session ended.';
-      end.dl.style.display = 'none';
-      show(screens.end);
-    }
+    function finish(summary){ state.running = false; exitFullscreen(); setProgress(100); setLabel('Finished'); end.title.textContent = 'Thank you'; end.details.textContent = summary || 'You have completed the task.'; end.dl.style.display = 'none'; show(screens.end); }
+    function endEarly(reason){ exitFullscreen(); setProgress(100); setLabel('Finished'); end.title.textContent = 'Session ended'; end.details.textContent = reason || 'Session ended.'; end.dl.style.display = 'none'; show(screens.end); }
 
     // Fullscreen helpers
-    async function requestFullscreen(){
-      const el = document.documentElement;
-      try {
-        if(el.requestFullscreen) await el.requestFullscreen();
-        else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      } catch(_) {}
-    }
-    function exitFullscreen(){
-      try {
-        if(document.fullscreenElement) document.exitFullscreen();
-        else if(document.webkitFullscreenElement) document.webkitExitFullscreen();
-      } catch(_) {}
-    }
+    async function requestFullscreen(){ const el = document.documentElement; try { if(el.requestFullscreen) await el.requestFullscreen(); else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen(); } catch(_) {} }
+    function exitFullscreen(){ try { if(document.fullscreenElement) document.exitFullscreen(); else if(document.webkitFullscreenElement) document.webkitExitFullscreen(); } catch(_) {} }
 
-    // PID
+    // PID utils
     function genPID(){ return 'P' + Math.random().toString(36).slice(2, 8).toUpperCase(); }
     function arrow(dir){ return ({up:'↑',down:'↓',left:'←',right:'→'})[dir] || '?'; }
     function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
     // Simple demo when experiment.js is not present
-    let demoIdx = 0, demoList = [
-      {src:'', fix:500}, {src:'', fix:500}, {src:'', fix:500}
-    ];
-    async function demoTrials(){
-      setProgress(60);
-      for(demoIdx=0; demoIdx<demoList.length; demoIdx++){
-        await showFix(400);
-        showStim('');
-        armResponseTimer(3);
-        await wait(700);
-      }
-      finish('Demo complete. Connect your experiment.js to run the real task.');
-    }
+    let demoIdx = 0, demoList = [ {src:'', fix:500}, {src:'', fix:500}, {src:'', fix:500} ];
+    async function demoTrials(){ setProgress(60); for(demoIdx=0; demoIdx<demoList.length; demoIdx++){ await showFix(400); showStim(''); armResponseTimer(3); await wait(700); } finish('Demo complete. Connect your experiment.js to run the real task.'); }
     function nextDemo(){ /* consume response in demo */ }
     function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
 
-    // Wire live dpad pressed visual state
-    function addPressVisuals(containerSel){
-      const container = document.querySelector(containerSel);
-      container.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if(b) b.classList.add('pressed'); });
-      container.addEventListener('pointerup', e => { const b = e.target.closest('button'); if(b) b.classList.remove('pressed'); });
-      container.addEventListener('pointerleave', e => { const b = e.target.closest('button'); if(b) b.classList.remove('pressed'); });
-    }
-    addPressVisuals('#dpad');
-    addPressVisuals('#dpad-live');
-
     // Init
-    setLabel('Welcome');
-    setProgress(0);
-    updateGroupDesc();
-    checkOrientation();
+    setLabel('Welcome'); setProgress(0); updateGroupDesc(); checkOrientation();
   })();
 
   // Example integration for your experiment.js
-  // Inside experiment.js you can do:
   // window.Experiment = {
-  //   start(hooks){
-  //     // your trial loop. Call hooks.showFixation(ms), hooks.showImage(src), hooks.armTimer(sec)
-  //     // when finished call hooks.onEnd('optional summary text')
-  //   },
-  //   onResponse(dir){
-  //     // consume participant response during a live trial
-  //   }
+  //   start(hooks){ /* call hooks.showFixation(ms), hooks.showImage(src), hooks.armTimer(sec); then hooks.onEnd('summary') */ },
+  //   onResponse(dir){ /* consume participant response */ }
   // };
   </script>
 </body>
