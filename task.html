@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Spatial Navigation Task</title>
+
+  <!-- Load your mapping file (must define window.stimulusMapping) -->
+  <script defer src="stimulus_mappings.js"></script>
+
+  <style>
+    :root { --fg:#222; --muted:#666; --card:#fff; --bd:#ddd; }
+    html, body {
+      margin:0; padding:0; height:100%;
+      background:#fff; color:var(--fg);
+      font-family: Arial, sans-serif;
+      /* Prevent scroll/zoom gestures interfering with swipes */
+      touch-action: none;
+    }
+    #experiment-container {
+      position: relative;
+      width: 100%; max-width: 860px; height: 100dvh;
+      margin: 0 auto;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .screen { display:none; text-align:center; padding:20px; }
+    .screen.active { display:block; }
+
+    .stimulus-stage {
+      width: 500px; height: 500px; margin: 0 auto; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--bd);
+      background: var(--card);
+      /* Ensure the swipe area eats gestures */
+      touch-action: none;
+    }
+    #stimulus-image {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: contain; display: none;
+    }
+    .fixation {
+      position: absolute; width: 64px; height: 64px; display: none;
+    }
+    .fixation::before, .fixation::after {
+      content: ""; position: absolute; background: #333; border-radius: 1px;
+    }
+    .fixation::before { /* vertical */ left:50%; transform:translateX(-50%); top:0; width:2px; height:100%; }
+    .fixation::after  { /* horizontal */ top:50%; transform:translateY(-50%); left:0; width:100%; height:2px; }
+
+    .instruction-text { font-size:18px; line-height:1.5; max-width:640px; margin:0 auto; }
+    .button {
+      background:#4CAF50; color:#fff; border:0; border-radius:6px;
+      padding:12px 22px; font-size:16px; cursor:pointer; margin-top:14px;
+    }
+    .button:hover { background:#45a049; }
+    .button:disabled { background:#bbb; cursor:not-allowed; }
+    .progress { position:absolute; top:10px; right:10px; font-size:14px; color:var(--muted); }
+
+    .nav-type-header {
+      display:inline-block; padding:8px 16px; border-radius:6px; color:#fff; font-weight:bold; margin: 10px 0 16px;
+    }
+    .egocentric-header { background:#4CAF50; }
+    .allocentric-header { background:#9C27B0; }
+    .control-header   { background:#FF9800; }
+
+    .form-group { margin:10px 0; }
+    .form-group label { display:inline-block; width:160px; text-align:right; margin-right:10px; }
+    input[type="number"], select {
+      padding:8px; font-size:16px; width:220px; border:1px solid #ddd; border-radius:4px;
+    }
+    .hint { font-size:12px; color:var(--muted); font-style:italic; margin-top:6px; }
+
+    /* Practice overlay (mode badge + legend) */
+    #practice-overlay {
+      position:absolute; inset:auto 0 8px 0; display:none; /* shown only in practice */
+      pointer-events:none;
+    }
+    #practice-badge {
+      display:inline-block; padding:6px 10px; border-radius:6px; color:#fff; font-weight:bold; margin-bottom:6px;
+    }
+    #practice-legend {
+      font-size:14px; color:#333; background: rgba(255,255,255,.95);
+      border: 1px solid #eee; border-radius:6px; padding:8px 10px; display:inline-block;
+    }
+    #practice-legend code { background:#f6f6f6; border:1px solid #eee; padding:1px 4px; border-radius:4px; }
+
+    /* Orientation guard (phones/tablets in portrait) */
+    #rotate-guard {
+      position: fixed; inset: 0; background:#fff; display:none; z-index: 999;
+      align-items:center; justify-content:center; text-align:center; padding:20px;
+    }
+    @media (orientation: portrait) and (hover: none) and (pointer: coarse) {
+      #rotate-guard { display:flex; }
+    }
+
+    /* Debug panel (opt-in via ?debug=true) */
+    #debug { position:fixed; left:8px; bottom:8px; background: rgba(255,255,255,.95);
+      border:1px solid #eee; padding:6px 8px; font-size:11px; max-width:320px; display:none; }
+    #debug.active { display:block; }
+  </style>
+</head>
+<body>
+  <div id="experiment-container">
+    <div class="progress" id="progress"></div>
+
+    <!-- Data Entry -->
+    <div id="data-entry-screen" class="screen active">
+      <h2>Spatial Navigation Task</h2>
+
+      <div class="form-group">
+        <label>Participant Group:</label>
+        <select id="participant-group" onchange="onGroupChange()">
+          <option value="">Select your group...</option>
+          <option value="DF">Deaf Fluent Signer</option>
+          <option value="HF">Hearing Fluent Signer</option>
+          <option value="DNF">Deaf Non-Fluent Signer</option>
+          <option value="HNF">Hearing Non-Fluent Signer</option>
+          <option value="HNS">Hearing Non-Signer</option>
+        </select>
+      </div>
+      <div id="group-desc" class="hint"></div>
+
+      <div class="form-group">
+        <label>Age:</label>
+        <input type="number" id="age" min="18" max="100">
+      </div>
+      <div class="form-group">
+        <label>Gender:</label>
+        <select id="gender">
+          <option value="">Select...</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="non-binary">Non-binary</option>
+          <option value="prefer-not">Prefer not to say</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Handedness:</label>
+        <select id="handedness">
+          <option value="">Select...</option>
+          <option value="right">Right</option>
+          <option value="left">Left</option>
+          <option value="ambidextrous">Ambidextrous</option>
+        </select>
+      </div>
+
+      <button class="button" id="start-button" onclick="startExperiment()" disabled>
+        Please select your group first
+      </button>
+      <div class="hint" id="stimuli-hint" style="display:none;"></div>
+    </div>
+
+    <!-- Instructions -->
+    <div id="instruction-screen" class="screen">
+      <div id="nav-type-indicator"></div>
+      <div id="instruction-text" class="instruction-text"></div>
+      <button class="button" id="instruction-continue">Continue</button>
+    </div>
+
+    <!-- Stimulus -->
+    <div id="stimulus-screen" class="screen">
+      <div class="stimulus-stage" id="swipe-area">
+        <img id="stimulus-image" src="" alt="Stimulus">
+        <div class="fixation" id="fixation" aria-hidden="true"></div>
+
+        <!-- Practice overlay (only shown during practice) -->
+        <div id="practice-overlay">
+          <div id="practice-badge">PLAYER VIEW</div>
+          <div id="practice-legend">
+            <div id="legend-egocentric" style="display:none;">
+              Swipe: <code>↑</code>=forward &nbsp; <code>↓</code>=backward &nbsp; <code>←</code>=left &nbsp; <code>→</code>=right
+            </div>
+            <div id="legend-allocentric" style="display:none;">
+              Swipe: <code>↑</code>=north &nbsp; <code>↓</code>=south &nbsp; <code>←</code>=west &nbsp; <code>→</code>=east
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback / Completion -->
+    <div id="feedback-screen" class="screen">
+      <div id="feedback-text" style="font-size:24px; margin:20px;"></div>
+      <button class="button" id="download-data" onclick="downloadData()" style="display:none;">Download Data</button>
+    </div>
+
+    <!-- Orientation guard -->
+    <div id="rotate-guard">
+      <div>
+        <h3>Please rotate your device</h3>
+        <p>This task works best in landscape.</p>
+      </div>
+    </div>
+
+    <!-- Debug -->
+    <div id="debug"></div>
+  </div>
+
+  <script>
+    /********* CONFIG *********/
+    const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzw_gLBsA5hY1dU7xZ1Fp67FptHEC9veo95vyId0bBOfu_QLMNFm02Rg0iRzURzx2Cn/exec';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const debugMode = urlParams.get('debug') === 'true';
+    if (debugMode) document.getElementById('debug').classList.add('active');
+
+    const GROUP_DESCRIPTIONS = {
+      DF: 'Deaf individuals who are fluent in sign language',
+      HF: 'Hearing individuals who are fluent in sign language',
+      DNF: 'Deaf individuals who are not fluent in sign language',
+      HNF: 'Hearing individuals who are not fluent in sign language',
+      HNS: 'Hearing individuals who do not know sign language'
+    };
+
+    const config = {
+      trialsPerBlock: 15,
+      maxResponseTime: 3000,
+      fixationDuration: 800,
+      itiDuration: 400,
+      practiceTrials: 4,   // 2 ego + 2 allo
+      repetitions: 2,      // each (ego/allo)×(easy/hard) twice
+      blocks: []
+    };
+
+    const state = {
+      participantInfo: {},
+      isPractice: false,
+      currentBlock: 0,
+      currentTrial: 0,
+      currentBlockStimuli: [],
+      usedStimuliTracker: {},
+      currentStimulus: null,
+      currentNavType: null,
+      currentDifficulty: null,
+      stimulusOnsetTime: null,
+      responseTimeout: null,
+      onKeyHandler: null,
+      allData: [],
+      blockData: []
+    };
+
+    const INSTRUCTIONS = {
+      full: {
+        egocentric: `
+In this task, you will move from the gray player to the red stop sign while avoiding blue walls.
+Make your choice as if you are the player.
+
+Swipe:
+• ↑ forward (direction the player faces)
+• ↓ backward
+• ← to the player's left
+• → to the player's right
+
+Choose the first step needed to reach the stop sign. Try to respond quickly and correctly.
+        `,
+        allocentric: `
+In this task, you will move from the gray player to the red stop sign while avoiding blue walls.
+Make your choice using screen directions (like a map).
+
+Swipe:
+• ↑ toward the top of the screen
+• ↓ toward the bottom
+• ← toward the left side
+• → toward the right side
+
+Choose the first step needed to reach the target. Try to respond quickly and correctly.
+        `,
+        control: `
+You will see arrows showing a path from the player to the target.
+Swipe to match the FIRST arrow from the player (↑/↓/←/→). Try to respond quickly and correctly.
+        `
+      },
+      brief: {
+        egocentric: `PLAYER VIEW:\nSwipe ↑ forward, ↓ backward, ← left, → right`,
+        allocentric:`MAP VIEW:\nSwipe ↑ top, ↓ bottom, ← left side, → right side`,
+        control:    `ARROW FOLLOWING:\nSwipe to match the FIRST arrow direction`
+      }
+    };
+
+    function prettyHeader(navType) {
+      return navType === 'egocentric' ? 'PLAYER VIEW'
+           : navType === 'allocentric' ? 'MAP VIEW'
+           : 'ARROW FOLLOWING';
+    }
+
+    /********* UTILS *********/
+    function showScreen(id){
+      ['data-entry-screen','instruction-screen','stimulus-screen','feedback-screen'].forEach(s=>{
+        const el = document.getElementById(s);
+        if (el) el.classList.toggle('active', s===id);
+      });
+    }
+    function setInstructionContinue(handler){
+      document.getElementById('instruction-continue').onclick = handler;
+    }
+    function debugLog(msg){
+      if (!debugMode) return;
+      const d = document.getElementById('debug');
+      d.innerHTML = (new Date().toLocaleTimeString()) + ' — ' + msg + '<br>' + d.innerHTML;
+    }
+    function updateProgress(){
+      const el = document.getElementById('progress');
+      if (state.isPractice) {
+        el.textContent = `Practice | Trial ${state.currentTrial + 1}/${config.practiceTrials}`;
+      } else {
+        const totalBlocks = config.blocks.length || 1;
+        el.textContent = `Block ${state.currentBlock + 1}/${totalBlocks} | Trial ${state.currentTrial + 1}/${config.trialsPerBlock}`;
+      }
+    }
+    function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+    class RNG {
+      constructor(seed){ this.seed = seed; }
+      random(){
+        let t = this.seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      }
+      shuffle(arr){
+        const a = [...arr];
+        for (let i=a.length-1; i>0; i--){
+          const j = Math.floor(this.random()*(i+1));
+          [a[i],a[j]]=[a[j],a[i]];
+        }
+        return a;
+      }
+    }
+    function rngFromId(id){
+      const base = String(id).split('').reduce((acc,c)=>acc+c.charCodeAt(0),0);
+      const jitter = Date.now()%1000;
+      return new RNG(base*1000 + jitter);
+    }
+    function determineCounterbalance(participantId){
+      const m = String(participantId).match(/\d+/);
+      const n = m ? parseInt(m[0],10) : [...String(participantId)].reduce((a,c)=>a+c.charCodeAt(0),0);
+      return (n % 4) + 1;
+    }
+    function createBlockSequence(counterbalance){
+      const latin = [
+        [['egocentric','easy'], ['egocentric','hard'], ['allocentric','easy'], ['allocentric','hard']],
+        [['egocentric','hard'], ['allocentric','hard'], ['egocentric','easy'], ['allocentric','easy']],
+        [['allocentric','easy'], ['egocentric','easy'], ['allocentric','hard'], ['egocentric','hard']],
+        [['allocentric','hard'], ['allocentric','easy'], ['egocentric','hard'], ['egocentric','easy']]
+      ];
+      const base = latin[counterbalance-1];
+      const seq = [];
+      for (let r=0; r<config.repetitions; r++){
+        base.forEach(([n,d]) => seq.push({navType:n, difficulty:d}));
+      }
+      // one control block in the middle
+      seq.splice(4, 0, {navType:'control', difficulty:'control'});
+      debugLog('Block sequence: ' + seq.map(b=>b.navType+'/'+b.difficulty).join(' | '));
+      return seq;
+    }
+    function ensureEnough(stimuli, need, rng){
+      if (!stimuli || stimuli.length === 0) return [];
+      let pool = [...stimuli];
+      if (pool.length < need) {
+        const reps = Math.ceil(need / pool.length);
+        pool = Array.from({length: reps}, ()=>rng.shuffle(stimuli)).flat();
+      }
+      pool = rng.shuffle(pool);
+      return pool.slice(0, need);
+    }
+    function prepareBlockStimuli(navType, difficulty, blockIndex, rng, count){
+      const bucket = window.stimulusMapping && window.stimulusMapping[difficulty];
+      if (!bucket || !bucket.length) {
+        debugLog(`No stimuli for ${difficulty}. Check stimulus_mappings.js`);
+        return [];
+      }
+      const key = navType + '_' + difficulty;
+      if (!state.usedStimuliTracker[key]) state.usedStimuliTracker[key] = new Set();
+
+      const unused = bucket.filter(s => !state.usedStimuliTracker[key].has(s.id));
+      const used   = bucket.filter(s =>  state.usedStimuliTracker[key].has(s.id));
+      let pool = [...unused, ...used];
+      for (let i=0;i<2;i++) pool = rng.shuffle(pool);
+
+      const chosen = ensureEnough(pool, count, rng);
+      chosen.forEach(s => state.usedStimuliTracker[key].add(s.id));
+
+      debugLog(`Prepared block ${blockIndex+1} ${navType}/${difficulty} -> ${chosen.length}`);
+      return chosen;
+    }
+    async function preloadImages(stimuli) {
+      await Promise.all((stimuli||[]).map(s => new Promise(res => {
+        const img = new Image(); img.onload = res; img.onerror = res; img.src = s.file;
+      })));
+    }
+
+    // ID helpers
+    async function getUniqueIdFromServer(groupCode) {
+      const res = await fetch(GOOGLE_SHEET_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'nextIdLocked', groupCode })
+      });
+      if (!res.ok) throw new Error('ID server responded ' + res.status);
+      const data = await res.json();
+      if (!data.ok || !data.id) throw new Error(data.error || 'Bad response');
+      return data.id;
+    }
+    function fallbackLocalId(groupCode) {
+      const bytes = new Uint8Array(8); crypto.getRandomValues(bytes);
+      const hex = Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,8);
+      return `${groupCode}-tmp-${Date.now().toString(36)}-${hex}`;
+    }
+    async function saveToGoogleSheet(payload){
+      try {
+        const body = { action: 'saveTrial', ...payload, user_agent: navigator.userAgent };
+        await fetch(GOOGLE_SHEET_URL, { method:'POST', mode:'no-cors',
+          headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      } catch(e){ debugLog('saveToGoogleSheet failed (local-only)'); }
+    }
+
+    /********* UI HOOKS *********/
+    function onGroupChange(){
+      const group = document.getElementById('participant-group').value;
+      const startBtn = document.getElementById('start-button');
+      const desc = document.getElementById('group-desc');
+      if (group) {
+        desc.textContent = GROUP_DESCRIPTIONS[group] || '';
+        startBtn.disabled = false; startBtn.textContent='Start Experiment';
+      } else {
+        desc.textContent=''; startBtn.disabled = true; startBtn.textContent='Please select your group first';
+      }
+
+      // Optional dev hint about stimuli (hidden to participants)
+      const sh = document.getElementById('stimuli-hint');
+      const loaded = !!(window.stimulusMapping && window.stimulusMapping.easy && window.stimulusMapping.hard);
+      sh.style.display = (debugMode && !loaded) ? 'block' : 'none';
+      if (debugMode && !loaded) sh.textContent = 'Stimuli: not loaded. Check stimulus_mappings.js.';
+    }
+
+    async function startExperiment(){
+      const group = document.getElementById('participant-group').value;
+      const age = document.getElementById('age').value;
+      const gender = document.getElementById('gender').value;
+      const handedness = document.getElementById('handedness').value;
+      if (!group) return alert('Please select your participant group first');
+      if (!age || !gender || !handedness) return alert('Please fill in all required fields (Age, Gender, Handedness)');
+
+      const startBtn = document.getElementById('start-button');
+      startBtn.disabled = true; startBtn.textContent = 'Assigning ID...';
+
+      let assignedId;
+      try { assignedId = await getUniqueIdFromServer(group); }
+      catch(e){ debugLog('ID server failed: ' + e.message); assignedId = fallbackLocalId(group); }
+
+      state.participantInfo = { id: assignedId, group, age, gender, handedness, timestamp: new Date().toISOString() };
+
+      // Build block plan
+      const cb = determineCounterbalance(assignedId);
+      config.blocks = createBlockSequence(cb);
+      state.usedStimuliTracker = {};
+
+      // Practice intro
+      const txt = document.getElementById('instruction-text');
+      const head = document.getElementById('nav-type-indicator'); head.className=''; head.textContent='';
+      txt.innerHTML = `
+        <h3>Practice Phase</h3>
+        <p>You will practice two modes:</p>
+        <p><strong>PLAYER VIEW</strong> — swipe as if you are the player (↑ forward, ↓ backward, ←/→ turn)</p>
+        <p><strong>MAP VIEW</strong> — swipe using map directions (↑ top, ↓ bottom, ← left, → right)</p>
+        <p>There are only a few practice trials. A short countdown will appear.</p>
+        <p>Press Continue when ready to begin practice.</p>`;
+      setInstructionContinue(()=> { state.isPractice = true; state.currentTrial = 0; runPracticeTrial(); });
+      showScreen('instruction-screen');
+
+      // re-enable start in case they come back
+      startBtn.disabled = false; startBtn.textContent = 'Start Experiment';
+    }
+
+    /********* PRACTICE FLOW *********/
+    function setPracticeOverlay(navType, show){
+      const overlay = document.getElementById('practice-overlay');
+      const badge = document.getElementById('practice-badge');
+      const legE = document.getElementById('legend-egocentric');
+      const legA = document.getElementById('legend-allocentric');
+      if (!show) { overlay.style.display='none'; return; }
+      overlay.style.display = 'block';
+      const isEgo = navType === 'egocentric';
+      badge.textContent = isEgo ? 'PLAYER VIEW' : 'MAP VIEW';
+      badge.className = ''; // reset
+      badge.id = 'practice-badge'; // keep id
+      badge.style.background = isEgo ? '#4CAF50' : '#9C27B0';
+      legE.style.display = isEgo ? 'block' : 'none';
+      legA.style.display = isEgo ? 'none'  : 'block';
+    }
+
+    async function runPracticeTrial(){
+      if (!state.isPractice) return;
+      if (state.currentTrial >= config.practiceTrials) {
+        // Practice complete → break screen before main task
+        state.isPractice = false;
+        state.currentBlock = 0; state.currentTrial = 0;
+
+        const txt = document.getElementById('instruction-text');
+        const head = document.getElementById('nav-type-indicator'); head.className=''; head.textContent='';
+        txt.innerHTML = `
+          <h3>Practice Complete</h3>
+          <p>The main task will begin next.</p>
+          <p>You can take a short break now. Press <strong>Continue</strong> when ready.</p>`;
+        setInstructionContinue(showBlockInstructions);
+        showScreen('instruction-screen');
+        return;
+      }
+
+      const navType = state.currentTrial < 2 ? 'egocentric' : 'allocentric';
+      // countdown for the first trial of each practice mode
+      if (state.currentTrial === 0 || state.currentTrial === 2) {
+        await showCountdown(prettyHeader(navType));
+      }
+
+      const bucket = window.stimulusMapping && window.stimulusMapping.easy;
+      const stimulus = (bucket && bucket.length)
+        ? bucket[state.currentTrial % bucket.length]
+        : { id:'placeholder', file:'', egocentric_correct:'up', allocentric_correct:'up' };
+
+      setPracticeOverlay(navType, true);
+      presentStimulus(stimulus, navType, 'practice');
+      updateProgress();
+    }
+
+    function showCountdown(label){
+      return new Promise(async (resolve)=>{
+        const txt = document.getElementById('instruction-text');
+        const head = document.getElementById('nav-type-indicator'); head.className=''; head.textContent='';
+        txt.innerHTML = `<h3>${label} practice</h3><p>Get ready…</p>`;
+        setInstructionContinue(null);
+        showScreen('instruction-screen');
+        for (let i=3;i>0;i--){
+          txt.innerHTML = `<h3>${label} practice</h3><p>Starting in ${i}…</p>`;
+          await sleep(700);
+        }
+        resolve();
+      });
+    }
+
+    /********* MAIN BLOCKS *********/
+    function showBlockInstructions(){
+      const block = config.blocks[state.currentBlock];
+      const head = document.getElementById('nav-type-indicator');
+      const txt = document.getElementById('instruction-text');
+
+      const name = prettyHeader(block.navType);
+      head.className = `nav-type-header ${block.navType}-header`;
+      head.textContent = name;
+
+      const msg = {
+        egocentric: `Navigate from the gray player to the red stop sign.<br><br>
+                     Swipe as if YOU are the player:<br>
+                     ↑ forward, ↓ backward, ← turn left, → turn right`,
+        allocentric:`Navigate from the gray player to the red stop sign.<br><br>
+                     Swipe as map directions:<br>
+                     ↑ top, ↓ bottom, ← west, → east`,
+        control:    `Follow the arrows shown.<br><br>
+                     Swipe to match the FIRST arrow from the player (↑/↓/←/→).`
+      };
+      txt.innerHTML = msg[block.navType];
+
+      setInstructionContinue(startBlock);
+      updateProgress();
+      showScreen('instruction-screen');
+    }
+
+    async function startBlock(){
+      const block = config.blocks[state.currentBlock];
+      const rng = rngFromId(state.participantInfo.id + '_b' + state.currentBlock);
+      state.currentBlockStimuli = prepareBlockStimuli(block.navType, block.difficulty, state.currentBlock, rng, config.trialsPerBlock);
+      state.currentTrial = 0; state.blockData = [];
+      await preloadImages(state.currentBlockStimuli);
+      setPracticeOverlay('', false); // hide for main task
+      nextTrial();
+    }
+
+    function nextTrial(){
+      if (state.isPractice) return;
+
+      if (state.currentTrial >= config.trialsPerBlock) {
+        state.allData.push(...state.blockData);
+        state.currentBlock++;
+        if (state.currentBlock >= config.blocks.length) {
+          showCompletion();
+        } else {
+          showBlockInstructions(); // break between blocks
+        }
+        return;
+      }
+
+      const block = config.blocks[state.currentBlock];
+      const stim = state.currentBlockStimuli[state.currentTrial];
+      if (!stim) {
+        debugLog('Missing stimulus at idx ' + state.currentTrial + ' — skipping');
+        state.currentTrial++;
+        return nextTrial();
+      }
+
+      presentStimulus(stim, block.navType, block.difficulty);
+      updateProgress();
+      // increment occurs after logging the response
+    }
+
+    /********* PRESENT & RESPOND *********/
+    function presentStimulus(stimulus, navType, difficulty){
+      state.currentStimulus = stimulus;
+      state.currentNavType = navType;
+      state.currentDifficulty = difficulty;
+
+      const img = document.getElementById('stimulus-image');
+      const fix = document.getElementById('fixation');
+
+      img.style.display = 'none';
+      fix.style.display = 'block';
+      showScreen('stimulus-screen');
+
+      setTimeout(()=> {
+        fix.style.display = 'none';
+        img.src = stimulus.file || '';
+        img.style.display = 'block';
+        state.stimulusOnsetTime = performance.now();
+
+        // Keyboard (desktop) — one-shot
+        state.onKeyHandler = (e)=> handleResponse(e);
+        document.addEventListener('keydown', state.onKeyHandler, { once: true });
+
+        // Timeout
+        state.responseTimeout = setTimeout(()=> {
+          detachKeyHandler();
+          handleResponse({ key: 'timeout' });
+        }, config.maxResponseTime);
+
+      }, config.fixationDuration);
+    }
+
+    function detachKeyHandler(){
+      if (state.onKeyHandler) {
+        document.removeEventListener('keydown', state.onKeyHandler);
+        state.onKeyHandler = null;
+      }
+      clearTimeout(state.responseTimeout);
+    }
+
+    function handleResponse(event){
+      const valid = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','timeout'];
+      const key = event.key || event;
+      if (!valid.includes(key)) {
+        // rearm single listener if a wrong key was pressed (keyboard only)
+        document.addEventListener('keydown', state.onKeyHandler = (e)=>handleResponse(e), { once: true });
+        return;
+      }
+
+      detachKeyHandler();
+
+      const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right', timeout:'none' };
+      const response = map[key];
+      const rt = key === 'timeout' ? null : Math.round(performance.now() - state.stimulusOnsetTime);
+
+      let correct;
+      if (state.currentNavType === 'egocentric')
+        correct = state.currentStimulus.egocentric_correct;
+      else if (state.currentNavType === 'allocentric')
+        correct = state.currentStimulus.allocentric_correct;
+      else
+        correct = state.currentStimulus.egocentric_correct ?? state.currentStimulus.allocentric_correct;
+
+      const accuracy = response === correct ? 1 : (response==='none' ? 0 : 0);
+      const tooSlow = (response==='none');
+
+      const common = {
+        participant_id: state.participantInfo.id,
+        participant_group: state.participantInfo.group,
+        age: state.participantInfo.age,
+        gender: state.participantInfo.gender,
+        handedness: state.participantInfo.handedness,
+        navigation_type: state.currentNavType,
+        difficulty: state.currentDifficulty,
+        stimulus_id: state.currentStimulus.id,
+        response, correct_response: correct, accuracy, rt_ms: rt,
+        timestamp: new Date().toISOString()
+      };
+
+      if (state.isPractice) {
+        saveToGoogleSheet({ ...common, block: 'practice', trial: state.currentTrial + 1 });
+        showPracticeFeedback(accuracy, tooSlow);
+      } else {
+        const trialNum = state.currentTrial + 1;
+        state.blockData.push({ ...common, block: state.currentBlock + 1, trial: trialNum });
+        saveToGoogleSheet({ ...common, block: state.currentBlock + 1, trial: trialNum });
+
+        state.currentTrial += 1;
+        setTimeout(()=> nextTrial(), config.itiDuration);
+      }
+    }
+
+    function showPracticeFeedback(ok, tooSlow){
+      const txt = document.getElementById('feedback-text');
+      const dl  = document.getElementById('download-data');
+      if (tooSlow) {
+        txt.textContent = 'Too slow — try to respond within 3 seconds';
+        txt.style.color = '#cc6600';
+      } else {
+        txt.textContent = ok ? 'Correct!' : 'Incorrect';
+        txt.style.color = ok ? 'green' : 'red';
+      }
+      dl.style.display = 'none';
+      showScreen('feedback-screen');
+      setTimeout(()=> {
+        showScreen('stimulus-screen');
+        state.currentTrial += 1;
+        runPracticeTrial();
+      }, 900);
+    }
+
+    /********* SWIPE INPUT (maps to Arrow keys) *********/
+    (function bindSwipe(){
+      const area = document.getElementById('swipe-area');
+      if (!area) return;
+      let start = null;
+
+      const THRESHOLD = 30; // px to consider a swipe
+      area.addEventListener('pointerdown', e => {
+        // only consider if we're currently awaiting a response
+        start = { x: e.clientX, y: e.clientY, t: performance.now() };
+      });
+      area.addEventListener('pointerup', e => {
+        if (!start) return;
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        start = null;
+
+        const adx = Math.abs(dx), ady = Math.abs(dy);
+        if (adx < THRESHOLD && ady < THRESHOLD) return; // ignore taps
+
+        let key;
+        if (adx > ady) key = dx > 0 ? 'ArrowRight' : 'ArrowLeft';
+        else           key = dy > 0 ? 'ArrowDown'  : 'ArrowUp';
+
+        // Only honor if a trial is showing and we're waiting
+        if (state.stimulusOnsetTime && state.onKeyHandler !== null) {
+          handleResponse({ key });
+        }
+      });
+      // Prevent long-press context menus on iOS
+      area.addEventListener('contextmenu', e => e.preventDefault());
+    })();
+
+    /********* FINISH *********/
+    async function showCompletion(){
+      const totalCorrect = state.allData.filter(d=>d.accuracy===1).length;
+      const acc = state.allData.length ? (totalCorrect / state.allData.length * 100).toFixed(1) : '—';
+      const meanRt = (state.allData.reduce((s,d)=> s + (d.rt_ms || 0), 0) /
+                     Math.max(1, state.allData.filter(d=>d.rt_ms!=null).length)).toFixed(0);
+
+      const summary = {
+        participant_id: state.participantInfo.id,
+        participant_group: state.participantInfo.group,
+        age: state.participantInfo.age,
+        gender: state.participantInfo.gender,
+        handedness: state.participantInfo.handedness,
+        total_trials: state.allData.length,
+        total_correct: totalCorrect,
+        overall_accuracy: acc,
+        mean_rt: meanRt,
+        completion_time: new Date().toISOString(),
+        trial: 'SUMMARY', block: 'SUMMARY', navigation_type: 'SUMMARY', difficulty: 'SUMMARY'
+      };
+      await saveToGoogleSheet(summary);
+
+      const txt = document.getElementById('feedback-text');
+      const dl  = document.getElementById('download-data');
+      txt.innerHTML = `
+        <h2>Experiment Complete!</h2>
+        <p>Thank you for participating.</p>
+        <p>Your data has been saved.</p>
+        <p>Overall accuracy: ${acc}%</p>
+        <p>Participant ID: ${state.participantInfo.id}</p>
+        <hr style="margin: 20px 0;">
+        <p class="hint">Optional: Download a backup copy of your data below</p>`;
+      txt.style.color = '#333';
+      dl.style.display = 'inline-block';
+      showScreen('feedback-screen');
+    }
+
+    function downloadData(){
+      if (!state.allData.length) return alert('No data to download');
+      const headers = Object.keys(state.allData[0]);
+      const csv = [
+        headers.join(','),
+        ...state.allData.map(r =>
+          headers.map(h => {
+            const v = r[h];
+            if (typeof v === 'string' && v.includes(',')) return `"${v.replace(/"/g,'""')}"`;
+            return v ?? '';
+          }).join(',')
+        )
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `spatial_nav_${state.participantInfo.id}_${Date.now()}.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Start-up: do NOT alert if mappings aren’t ready; only hint in debug mode.
+    document.addEventListener('DOMContentLoaded', ()=>{
+      onGroupChange(); // initialize UI state
+    });
+  </script>
+</body>
+</html>
+
+
