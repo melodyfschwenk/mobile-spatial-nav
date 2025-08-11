@@ -1,6 +1,8 @@
-// Stimulus mapping for Spatial Navigation Task
-// Files are organized in subfolders: stimuli/easy/, stimuli/hard/, stimuli/control/
+// Stimulus mappings for Spatial Navigation Task
+// This file maps stimulus images to their correct responses for each navigation type
+
 const stimulusMapping = {
+    // Easy difficulty stimuli (36 items)
     easy: [
         { id: "easy_001", file: "stimuli/easy/1.png", egocentric_correct: "up", allocentric_correct: "up" },
         { id: "easy_002", file: "stimuli/easy/2.png", egocentric_correct: "left", allocentric_correct: "up" },
@@ -39,6 +41,8 @@ const stimulusMapping = {
         { id: "easy_035", file: "stimuli/easy/35.png", egocentric_correct: "up", allocentric_correct: "up" },
         { id: "easy_036", file: "stimuli/easy/36.png", egocentric_correct: "up", allocentric_correct: "down" }
     ],
+    
+    // Hard difficulty stimuli (32 items)
     hard: [
         { id: "hard_001", file: "stimuli/hard/1.png", egocentric_correct: "up", allocentric_correct: "up" },
         { id: "hard_002", file: "stimuli/hard/2.png", egocentric_correct: "left", allocentric_correct: "up" },
@@ -73,6 +77,8 @@ const stimulusMapping = {
         { id: "hard_031", file: "stimuli/hard/31.png", egocentric_correct: "left", allocentric_correct: "down" },
         { id: "hard_032", file: "stimuli/hard/32.png", egocentric_correct: "down", allocentric_correct: "right" }
     ],
+    
+    // Control condition stimuli (10 items)
     control: [
         { id: "control_01", file: "stimuli/control/1.png", egocentric_correct: "right", allocentric_correct: "right" },
         { id: "control_02", file: "stimuli/control/2.png", egocentric_correct: "up", allocentric_correct: "up" },
@@ -83,6 +89,6 @@ const stimulusMapping = {
         { id: "control_07", file: "stimuli/control/7.png", egocentric_correct: "right", allocentric_correct: "right" },
         { id: "control_08", file: "stimuli/control/8.png", egocentric_correct: "up", allocentric_correct: "up" },
         { id: "control_09", file: "stimuli/control/9.png", egocentric_correct: "left", allocentric_correct: "left" },
-        { id: "control_010", file: "stimuli/control/10.png", egocentric_correct: "down", allocentric_correct: "down" }
+        { id: "control_10", file: "stimuli/control/10.png", egocentric_correct: "down", allocentric_correct: "down" }
     ]
 };
