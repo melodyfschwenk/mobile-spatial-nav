@@ -1,263 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Spatial Navigation Task - Mobile Version</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spatial Navigation Task</title>
+  <style>
+    html, body { 
+      height: 100%; margin: 0; background: #fff; color: #222; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; 
+    }
+    
+    #stage { 
+      position: fixed; inset: 0; background: #fff; 
+      display: grid; place-items: center; 
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    /* Stimulus display */
+    #stimulus-container {
+      width: 500px; height: 500px; position: relative;
+      border: 2px solid #ddd; background: #fff;
+      display: none;
+    }
+    #stimulus-image {
+      width: 100%; height: 100%; object-fit: contain;
+    }
+    
+    /* Fixation cross */
+    #fixation {
+      position: absolute; inset: 0;
+      display: none; align-items: center; justify-content: center;
+      background: #fff;
+    }
+    #fixation::before, #fixation::after {
+      content: ""; position: absolute; background: #333;
+    }
+    #fixation::before { width: 2px; height: 40px; }
+    #fixation::after { width: 40px; height: 2px; }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
+    /* HUD */
+    #hud { 
+      position: fixed; top: 10px; left: 10px; right: 10px; 
+      display: flex; align-items: center; justify-content: space-between; 
+      pointer-events: none; z-index: 10;
+    }
+    .chip { 
+      background: #f0f0f0; border: 1px solid #ddd; border-radius: 20px; 
+      padding: 6px 12px; font-size: 14px; color: #666; margin-right: 8px; 
+    }
+    #legend { pointer-events: auto; }
+    #legend kbd { 
+      background: #e0e0e0; border: 1px solid #ccc; border-radius: 4px; 
+      padding: 2px 6px; font-weight: 700; 
+    }
 
-        h1 {
-            color: #333;
-            font-size: clamp(24px, 5vw, 32px);
-            margin-bottom: 10px;
-            text-align: center;
-        }
+    /* Screens */
+    .screen { 
+      position: fixed; inset: 0; background: #fff; 
+      display: none; align-items: center; justify-content: center; 
+      flex-direction: column; z-index: 100; text-align: center; padding: 24px; 
+    }
+    .screen.active { display: flex; }
+    
+    /* Form elements */
+    .form-group { 
+      margin: 15px 0; text-align: left; width: 100%; max-width: 400px; 
+    }
+    .form-group label { 
+      display: block; margin-bottom: 5px; font-weight: 600; color: #555; 
+    }
+    .form-group select, .form-group input { 
+      width: 100%; padding: 10px; border: 1px solid #ddd; 
+      border-radius: 6px; font-size: 16px; 
+    }
 
-        .subtitle {
-            color: #666;
-            font-size: clamp(14px, 3vw, 18px);
-            margin-bottom: 30px;
-            text-align: center;
-        }
+    /* Instructions */
+    .instruction-box {
+      max-width: 760px; background: #f8f9fa; border: 1px solid #ddd;
+      border-radius: 12px; padding: 24px; margin: 20px;
+    }
+    .instruction-box h2 { margin: 0 0 15px; color: #333; }
+    .instruction-box p { color: #666; line-height: 1.6; text-align: left; }
+    
+    /* Navigation type headers */
+    .nav-header {
+      display: inline-block; padding: 8px 16px; border-radius: 6px; 
+      color: #fff; font-weight: bold; margin: 10px 0;
+    }
+    .nav-header.egocentric { background: #4CAF50; }
+    .nav-header.allocentric { background: #9C27B0; }
+    .nav-header.control { background: #FF9800; }
 
-        .device-check {
-            background: #f0f4ff;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
+    /* Buttons */
+    .btn { 
+      background: #4CAF50; border: 0; color: #fff; border-radius: 24px; 
+      padding: 12px 24px; font-weight: 700; cursor: pointer; margin: 8px;
+      font-size: 16px; transition: background 0.3s;
+    }
+    .btn:hover:not(:disabled) { background: #45a049; }
+    .btn:disabled { background: #bbb; cursor: not-allowed; }
+    .btn.secondary { background: #757575; }
+    .btn.secondary:hover:not(:disabled) { background: #616161; }
 
-        .device-check.mobile {
-            border-color: #4CAF50;
-            background: #f0fff4;
-        }
+    /* Feedback */
+    #feedback { 
+      position: fixed; left: 50%; top: 20%; transform: translateX(-50%); 
+      font-size: 28px; font-weight: 800; display: none; z-index: 200;
+    }
 
-        .device-check .icon {
-            font-size: 30px;
-            margin-bottom: 10px;
-        }
+    /* Practice helpers */
+    #practice-banner { 
+      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+      display: none; z-index: 20;
+    }
+    #practice-helper { 
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: none; font-size: 14px; color: #666; background: #f8f9fa;
+      padding: 10px 15px; border-radius: 8px; max-width: 500px; z-index: 20;
+    }
 
-        .info-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-
-        .info-box h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: clamp(16px, 3.5vw, 20px);
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            color: #555;
-            font-size: clamp(12px, 2.5vw, 16px);
-        }
-
-        .info-item strong {
-            min-width: 100px;
-            color: #333;
-        }
-
-        .requirements {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #ffc107;
-            margin: 20px 0;
-        }
-
-        .requirements h4 {
-            margin-bottom: 10px;
-            color: #856404;
-            font-size: clamp(14px, 3vw, 18px);
-        }
-
-        .requirements ul {
-            margin: 10px 0;
-            padding-left: 20px;
-            font-size: clamp(12px, 2.5vw, 16px);
-        }
-
-        .start-button {
-            display: block;
-            width: 100%;
-            padding: 18px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 50px;
-            font-size: clamp(16px, 3.5vw, 20px);
-            font-weight: bold;
-            text-align: center;
-            margin: 30px 0;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            border: none;
-            cursor: pointer;
-        }
-
-        .start-button:hover, .start-button:active {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.5);
-        }
-
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
-            color: #666;
-            font-size: clamp(11px, 2vw, 14px);
-            text-align: center;
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 20px;
-                border-radius: 15px;
-            }
-            
-            .info-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .info-item strong {
-                margin-bottom: 5px;
-            }
-        }
-
-        /* Prevent iOS bounce */
-        html, body {
-            position: fixed;
-            overflow: hidden;
-            width: 100%;
-            height: 100%;
-        }
-
-        body {
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            position: relative;
-        }
-    </style>
+    /* Completion */
+    .completion-stats {
+      background: #f8f9fa; padding: 20px; border-radius: 10px; 
+      margin: 20px 0; min-width: 300px;
+    }
+    .stat-row { 
+      display: flex; justify-content: space-between; margin: 10px 0; 
+    }
+    .stat-label { color: #666; }
+    .stat-value { font-weight: bold; color: #333; }
+  </style>
+  <script src="config.js"></script>
+  <script src="stimulus_mappings.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Spatial Navigation Task</h1>
-        <p class="subtitle">Mobile-Optimized Version</p>
-        
-        <div class="device-check" id="deviceCheck">
-            <div class="icon" id="deviceIcon">📱</div>
-            <div id="deviceMessage">Checking device...</div>
-        </div>
-        
-        <div class="info-box">
-            <h3>Study Information</h3>
-            <div class="info-item">
-                <strong>Duration:</strong> <span>~20 minutes</span>
-            </div>
-            <div class="info-item">
-                <strong>Trials:</strong> <span>135 trials (9 blocks)</span>
-            </div>
-            <div class="info-item">
-                <strong>Task Types:</strong> <span>Player & Map view</span>
-            </div>
-            <div class="info-item">
-                <strong>Practice:</strong> <span>4 practice trials</span>
-            </div>
-        </div>
-        
-        <div class="requirements">
-            <h4>⚠️ Requirements</h4>
-            <ul>
-                <li>Stable internet connection</li>
-                <li>Quiet environment</li>
-                <li>Full attention for ~20 minutes</li>
-                <li>Chrome or Safari browser</li>
-            </ul>
-        </div>
-        
-        <button onclick="startExperiment()" class="start-button">
-            Begin Experiment
-        </button>
-        
-        <div class="info-box">
-            <h3>How It Works</h3>
-            <p style="margin-bottom: 10px;">Navigate through mazes using two strategies:</p>
-            <ul style="color: #555; font-size: clamp(12px, 2.5vw, 16px);">
-                <li><strong>Player View:</strong> Navigate as the player</li>
-                <li><strong>Map View:</strong> Use compass directions</li>
-            </ul>
-        </div>
-        
-        <div class="footer">
-            <p>Questions? Contact: research@example.edu</p>
-            <p style="margin-top: 10px;">Your data is kept confidential and anonymous.</p>
-        </div>
+  <!-- HUD -->
+  <div id="hud" aria-live="polite">
+    <div>
+      <span class="chip" id="phaseChip">Ready</span>
+      <span class="chip" id="progressChip">0 / 0</span>
     </div>
+    <div id="legend" class="chip">
+      Use Arrow Keys: ↑ ↓ ← →
+    </div>
+  </div>
 
-    <script>
-        // Device detection
-        function detectDevice() {
-            const check = document.getElementById('deviceCheck');
-            const icon = document.getElementById('deviceIcon');
-            const msg = document.getElementById('deviceMessage');
-            
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const isTablet = /iPad|Android/i.test(navigator.userAgent) && Math.min(window.screen.width, window.screen.height) >= 768;
-            
-            if (isMobile || isTablet) {
-                check.classList.add('mobile');
-                icon.textContent = isTablet ? '📱' : '📱';
-                msg.innerHTML = `<strong>✓ ${isTablet ? 'Tablet' : 'Mobile'} device detected</strong><br>Ready for mobile version`;
-            } else {
-                icon.textContent = '💻';
-                msg.innerHTML = `<strong>Desktop detected</strong><br>This version is optimized for touch devices`;
-            }
-        }
+  <!-- Data Entry Screen -->
+  <div id="entry-screen" class="screen active">
+    <div class="instruction-box">
+      <h2>Spatial Navigation Task</h2>
+      <p>Welcome! Please provide your information to begin.</p>
+      
+      <div class="form-group">
+        <label>Participant Group:</label>
+        <select id="participant-group">
+          <option value="">Select your group...</option>
+          <option value="DF">Deaf Fluent Signer</option>
+          <option value="HF">Hearing Fluent Signer</option>
+          <option value="DNF">Deaf Non-Fluent Signer</option>
+          <option value="HNF">Hearing Non-Fluent Signer</option>
+          <option value="HNS">Hearing Non-Signer</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Age:</label>
+        <input type="number" id="age" min="18" max="100" placeholder="Enter your age">
+      </div>
+      
+      <div class="form-group">
+        <label>Gender:</label>
+        <select id="gender">
+          <option value="">Select...</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="non-binary">Non-binary</option>
+          <option value="prefer-not">Prefer not to say</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Handedness:</label>
+        <select id="handedness">
+          <option value="">Select...</option>
+          <option value="right">Right</option>
+          <option value="left">Left</option>
+          <option value="ambidextrous">Ambidextrous</option>
+        </select>
+      </div>
+      
+      <button class="btn" id="startBtn" disabled>Start Experiment</button>
+    </div>
+  </div>
 
-        function startExperiment() {
-            window.location.href = 'experiment.html';
-        }
+  <!-- Instruction Screen -->
+  <div id="instruction-screen" class="screen">
+    <div class="instruction-box">
+      <div id="nav-indicator"></div>
+      <h2 id="instruction-title">Instructions</h2>
+      <div id="instruction-text"></div>
+      <button class="btn" id="continueBtn">Continue</button>
+    </div>
+  </div>
 
-        // Run device detection on load
-        window.addEventListener('DOMContentLoaded', detectDevice);
-        window.addEventListener('resize', detectDevice);
-    </script>
+  <!-- Stage with stimulus -->
+  <div id="stage">
+    <div id="practice-banner" class="nav-header"></div>
+    
+    <div id="stimulus-container">
+      <div id="fixation"></div>
+      <img id="stimulus-image" src="" alt="Navigation stimulus">
+    </div>
+    
+    <div id="practice-helper"></div>
+  </div>
+
+  <!-- Feedback -->
+  <div id="feedback"></div>
+
+  <!-- Completion Screen -->
+  <div id="completion-screen" class="screen">
+    <div class="instruction-box">
+      <h2>Task Complete!</h2>
+      <p>Thank you for participating in the Spatial Navigation Task.</p>
+      
+      <div class="completion-stats">
+        <div class="stat-row">
+          <span class="stat-label">Participant ID:</span>
+          <span class="stat-value" id="final-id">-</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Overall Accuracy:</span>
+          <span class="stat-value" id="final-accuracy">-</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Mean Response Time:</span>
+          <span class="stat-value" id="final-rt">-</span>
+        </div>
+      </div>
+      
+      <button class="btn" id="closeBtn">Close</button>
+    </div>
+  </div>
+
+  <script src="sn.js"></script>
 </body>
 </html>
